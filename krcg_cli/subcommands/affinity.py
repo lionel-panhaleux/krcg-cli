@@ -39,14 +39,12 @@ def affinity(args):
                 + " ".join('"' + card.name + '"' for card in cards)
             )
         return 0
-    candidates = A.candidates(*cards)
+    # do not include spoilers if affinity is within 50% of natural occurence
+    candidates = A.candidates(*cards, spoiler_multiplier=1.5)
     for card, score in candidates:
         score = round(score * 100 / len(cards))
         if args.min > score:
             break
-        # do not include spoilers if affinity is within 50% of natural occurence
-        if score < A.spoilers.get(card, 0) * 150:
-            continue
         print(
             f"{card.name:<30} (in {score:.0f}% of decks, typically "
             f"{_utils.typical_copies(A, card)})"

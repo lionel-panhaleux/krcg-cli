@@ -76,7 +76,9 @@ Requires a justicar or Inner Circle member.
 Choose a ready Camarilla vampire. If this referendum is successful, search your library for an equipment card and place this card and the equipment on the chosen vampire. Pay half the cost (round down) of the equipment. This vampire may enter combat with any vampire controlled by another Methuselah as a +1 stealth Ⓓ action. This vampire cannot commit diablerie. A vampire may have only one Alastor.
 
 -- Rulings
+If the given weapon costs blood, the target Alastor pays the cost. [LSJ 20040518]
 Requirements do not apply. [ANK 20200901]
+[LSJ 20040518]: https://groups.google.com/d/msg/rec.games.trading-cards.jyhad/4emymfUPwAM/B2SCC7L6kuMJ
 [ANK 20200901]: http://www.vekn.net/forum/rules-questions/78830-alastor-and-ankara-citadel#100653
 """  # noqa: E501
     )

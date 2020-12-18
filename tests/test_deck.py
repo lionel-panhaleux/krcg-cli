@@ -51,7 +51,7 @@ Master (19; 3 trifle)
 1x Creepshow Casino
 1x KRCG News Radio
 2x Perfectionist
-6x Storage Annex
+6x Storage Annex           -- great card! usually underestimated
 3x Sudden Reversal
 3x Vessel
 
@@ -66,11 +66,11 @@ Ally (12)
 
 Equipment (9)
 1x Deer Rifle
-8x Flash Grenade
+8x Flash Grenade           -- brings fear to the methuselahs rather than to minions
 
 Action Modifier (19)
 6x Cloak the Gathering
-7x Conditioning
+7x Conditioning            -- should be more!
 2x Lost in Crowds
 4x Veil the Legions
 
