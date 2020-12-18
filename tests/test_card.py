@@ -59,7 +59,7 @@ def test_text(capsys):
         == """Alastor
 [Political Action] -- (#100038)
 Requires a justicar or Inner Circle member.
-Choose a ready Camarilla vampire. If this referendum is successful, search your library for an equipment card and place this card and the equipment on the chosen vampire. Pay half the cost (round down) of the equipment. This vampire may enter combat with any vampire controlled by another Methuselah as a +1 stealth Ⓓ  action. This vampire cannot commit diablerie. A vampire may have only one Alastor.
+Choose a ready Camarilla vampire. If this referendum is successful, search your library for an equipment card and place this card and the equipment on the chosen vampire. Pay half the cost (round down) of the equipment. This vampire may enter combat with any vampire controlled by another Methuselah as a +1 stealth Ⓓ action. This vampire cannot commit diablerie. A vampire may have only one Alastor.
 """  # noqa: E501
     )
 
@@ -73,7 +73,7 @@ def test_links(capsys):
         == """Alastor
 [Political Action] -- (#100038)
 Requires a justicar or Inner Circle member.
-Choose a ready Camarilla vampire. If this referendum is successful, search your library for an equipment card and place this card and the equipment on the chosen vampire. Pay half the cost (round down) of the equipment. This vampire may enter combat with any vampire controlled by another Methuselah as a +1 stealth Ⓓ  action. This vampire cannot commit diablerie. A vampire may have only one Alastor.
+Choose a ready Camarilla vampire. If this referendum is successful, search your library for an equipment card and place this card and the equipment on the chosen vampire. Pay half the cost (round down) of the equipment. This vampire may enter combat with any vampire controlled by another Methuselah as a +1 stealth Ⓓ action. This vampire cannot commit diablerie. A vampire may have only one Alastor.
 
 -- Rulings
 Requirements do not apply. [ANK 20200901]
@@ -103,6 +103,6 @@ Strike: 2R damage, with 1 optional maneuver each combat.
 Alastor
 [Political Action] -- (#100038)
 Requires a justicar or Inner Circle member.
-Choose a ready Camarilla vampire. If this referendum is successful, search your library for an equipment card and place this card and the equipment on the chosen vampire. Pay half the cost (round down) of the equipment. This vampire may enter combat with any vampire controlled by another Methuselah as a +1 stealth Ⓓ  action. This vampire cannot commit diablerie. A vampire may have only one Alastor.
+Choose a ready Camarilla vampire. If this referendum is successful, search your library for an equipment card and place this card and the equipment on the chosen vampire. Pay half the cost (round down) of the equipment. This vampire may enter combat with any vampire controlled by another Methuselah as a +1 stealth Ⓓ action. This vampire cannot commit diablerie. A vampire may have only one Alastor.
 """  # noqa: E501
     )
