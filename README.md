@@ -1,6 +1,15 @@
 # krcg-cli
 
-CLI tool for VTES
+CLI tool for V:tES, using
+the VEKN [official card texts](http://www.vekn.net/card-lists),
+the [Tournament Winning Deck Archive (TWDA)](http://www.vekn.fr/decks/twd.htm) and
+[KRCG](https://github.com/lionel-panhaleux/krcg) rulings list.
+
+Portions of the materials are the copyrights and trademarks of Paradox Interactive AB,
+and are used with permission. All rights reserved.
+For more information please visit [white-wolf.com](http://www.white-wolf.com).
+
+![Dark Pack](dark-pack.png)
 
 ## Usage
 
@@ -18,6 +27,14 @@ And also extensive help on each sub-command:
 ```bash
 krcg [COMMAND] --help
 ```
+
+## Contribute
+
+**Contributions are welcome !**
+
+This CLI is an offspring of the [KRCG](https://github.com/lionel-panhaleux/krcg)
+python package, so please refer to that repository for issues, discussions
+and contributions guidelines.
 
 ## Examples
 
