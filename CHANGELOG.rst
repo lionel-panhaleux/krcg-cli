@@ -1,4 +1,4 @@
-2.1 (unreleased)
+2.1 (2020-12-20)
 ----------------
 
 - Register on PyPI
