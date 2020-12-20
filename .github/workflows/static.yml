@@ -23,7 +23,7 @@ jobs:
           pip install -e .[dev]
       - name: Format
         run: |
-          black --check krcg tests
+          black --check krcg_cli tests
       - name: Lint
         run: |
           flake8
