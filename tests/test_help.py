@@ -24,5 +24,6 @@ subcommands:
     affinity  display cards affinity (most played together)
     build     build a deck around given card(s), based on the TWDA
     format    format a decklist
+    seating   compute optimal seating
 """  # noqa: W293
     )
