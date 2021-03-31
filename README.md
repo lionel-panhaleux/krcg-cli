@@ -17,10 +17,19 @@ For more information please visit [white-wolf.com](http://www.white-wolf.com).
 
 ![Dark Pack](dark-pack.png)
 
+## Install
+
+You need to have [Python 3](https://www.python.org) installed on your system.
+`krcg-cli` is a standard Python package, you can install it using `pip`:
+
+```bash
+pip install krcg-cli
+```
+
 ## Usage
 
 An internet connection is required to initialize krcg with official VEKN data
-(cards list and TWDA).
+(cards list and TWDA):
 
 Use the help command for a full documentation of the tool:
 
