@@ -1,7 +1,7 @@
 2.2 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- New seating subcommand
 
 
 2.1 (2020-12-20)

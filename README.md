@@ -350,8 +350,56 @@ Combat (36)
 3x Terror Frenzy
 ```
 
-Fornat a decklist into another format - also not that krcg commands can be piped.
+Format a decklist into another format - also note that krcg commands can be piped.
 
 ```bash
 krcg deck 2016gncbg | krcg format -f lackey > 2016gncbg.txt
 ```
+
+Compute an optimal tournament seating
+
+```bash
+$ krcg seating -v 16
+8,2,12,15,7,14,9,13,6,16,1,3,10,4,5,11
+15,6,10,14,11,7,8,1,4,13,16,2,12,9,3,5
+2,5,7,6,14,3,4,8,16,15,11,9,1,10,13,12
+--------------------------------- details ---------------------------------
+Round 1: [[8, 2, 12, 15], [7, 14, 9, 13], [6, 16, 1, 3], [10, 4, 5, 11]]
+Round 2: [[15, 6, 10, 14], [11, 7, 8, 1], [4, 13, 16, 2], [12, 9, 3, 5]]
+Round 3: [[2, 5, 7, 6], [14, 3, 4, 8], [16, 15, 11, 9], [1, 10, 13, 12]]
+R1   0.00  OK (predator-prey)
+R2   0.00  OK (opponent thrice)
+R3   0.00  OK (available vps)
+R4   0.00  OK (opponent twice)
+R5   0.00  OK (fifth seat)
+R6   0.00  OK (position)
+R7   0.00  OK (same seat)
+R8   1.12 NOK (starting transfers): mean is 7.50, [4, 7, 10, 16] have 6, [3, 5, 9, 13] have 9
+R9   0.00  OK (position group)
+```
+
+You can also compute a modified seating if players leave early or arrive late.
+For example, to remove player 6 and 9 and add player 18 in round 2, just list round 1
+as played and add and remove players as needed.
+
+```bash
+$ krcg seating -p 8,2,12,15,7,14,9,13,6,16,1,3,10,4,5,11 --remove 6 9 --add 18 -v
+8,2,12,15,7,14,9,13,6,16,1,3,10,4,5,11
+11,1,15,7,12,5,18,13,16,2,14,3,4,8,10
+15,11,16,5,14,2,13,8,1,4,18,12,3,10,7
+--------------------------------- details ---------------------------------
+Round 1: [[8, 2, 12, 15], [7, 14, 9, 13], [6, 16, 1, 3], [10, 4, 5, 11]]
+Round 2: [[11, 1, 15, 7, 12], [5, 18, 13, 16, 2], [14, 3, 4, 8, 10]]
+Round 3: [[15, 11, 16, 5, 14], [2, 13, 8, 1, 4], [18, 12, 3, 10, 7]]
+R1   0.00  OK (predator-prey)
+R2   0.00  OK (opponent thrice)
+R3   0.00  OK (available vps)
+R4  10.00 NOK (opponent twice): 2-8, 2-13, 3-10, 4-8, 4-10, 5-11, 5-16, 7-12, 11-15, 12-15
+R5   0.00  OK (fifth seat)
+R6   0.00  OK (position)
+R7   0.00  OK (same seat)
+R8   0.81 NOK (starting transfers): mean is 8.36, [2, 11, 14] have 7, [1, 3, 4, 7, 10, 12, 13, 16] have 9
+R9   0.00  OK (position group)
+```
+
+Note that removed and added players are not considered in vps and transfers rules (R3, R8)
