@@ -1,4 +1,4 @@
-2.2 (unreleased)
+2.2 (2021-04-02)
 ----------------
 
 - New seating subcommand
