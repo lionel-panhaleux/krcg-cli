@@ -1,7 +1,8 @@
 2.3 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Improve logging
+- Seating command: option to output an archon file compatible structure
 
 
 2.2 (2021-04-02)

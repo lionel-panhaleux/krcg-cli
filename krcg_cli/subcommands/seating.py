@@ -82,6 +82,11 @@ yield unusable seatings listing only the players of the last round.
         help="Display seating tables and statistics",
     )
     parser.add_argument(
+        "--archon",
+        action="store_true",
+        help="Display Archon-compatible seating lines (empty cell for empty 5th seat)",
+    )
+    parser.add_argument(
         "-p",
         "--played",
         type=lambda s: [int(x) for x in s.split(",") if x],
@@ -167,7 +172,8 @@ def seat(options):
         return 1
 
     players = list(players)
-    random.shuffle(players)
+    if not options.archon:
+        random.shuffle(players)
     players = {i: p for i, p in enumerate(players, 1)}
     permutations = (options.played or []) + [
         [players[i] for i in permutation] for permutation in permutations
@@ -193,11 +199,18 @@ def seat(options):
                 for _ in range(cpus)
             ]
             rounds, score = min((r.get() for r in results), key=lambda x: x[1].total)
+            print("", file=sys.stderr, end="")
     else:
         rounds = [seating.Round(p) for p in permutations]
         score = seating.score_rounds(rounds)
     for round_ in rounds:
-        print(",".join(str(p) for p in itertools.chain.from_iterable(round_)))
+        delimiter = ","
+        if options.archon:
+            delimiter = "\t"
+            for table in round_:
+                if len(table) == 4:
+                    table.append("")
+        print(delimiter.join(str(p) for p in itertools.chain.from_iterable(round_)))
     if not options.verbose:
         return 0
     print("--------------------------------- details ---------------------------------")
