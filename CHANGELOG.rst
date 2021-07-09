@@ -1,4 +1,4 @@
-2.3 (unreleased)
+2.3 (2021-07-09)
 ----------------
 
 - Improve logging
