@@ -6,7 +6,7 @@ from . import parser
 
 
 def main():
-    logging.basicConfig(format="[%(levelname)7s] %(message)s")
+    logging.basicConfig(level=logging.INFO, format="[%(levelname)7s] %(message)s")
     exit(parser.execute(sys.argv[1:]))
 
 
