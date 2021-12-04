@@ -54,7 +54,7 @@ def _display_card(args, name: str, index: int = 0) -> None:
     except ValueError:
         pass
     card = vtes.VTES[name]
-    print(card.name)
+    print(card.usual_name)
     if args.international:
         for lang, translation in card.i18n_variants("name"):
             print(f"  {lang[:2]} -- {translation}")

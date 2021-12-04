@@ -30,7 +30,7 @@ def top(args):
     A.refresh(condition=lambda c: c in candidates)
     for card, count in A.played.most_common()[: args.number]:
         print(
-            f"{card.name:<30} (played in {count} decks, typically "
+            f"{card.usual_name:<30} (played in {count} decks, typically "
             f"{_utils.typical_copies(A, card)})"
         )
     return 0

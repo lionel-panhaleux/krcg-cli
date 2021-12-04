@@ -1,7 +1,8 @@
 2.5 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Slight changes (retro-compatible) to handle V5 Anarch
+- Adapted to seating algorithm changes
 
 
 2.4 (2021-07-09)

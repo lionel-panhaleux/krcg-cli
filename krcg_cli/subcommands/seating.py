@@ -1,7 +1,6 @@
 import argparse
 import collections
 import functools
-import itertools
 import multiprocessing
 import random
 import sys
@@ -89,7 +88,7 @@ yield unusable seatings listing only the players of the last round.
     parser.add_argument(
         "-p",
         "--played",
-        type=lambda s: [int(x) for x in s.split(",") if x],
+        type=lambda s: seating.Round.from_players([int(x) for x in s.split(",") if x]),
         nargs="*",
         metavar="ROUND",
         help="Rounds that have already been played",
@@ -141,29 +140,38 @@ def seat(options):
 
     if options.players:
         players = set(range(1, options.players + 1))
-        rounds = options.rounds
+        rounds_count = options.rounds
     else:
-        players = set(options.played[-1])
-        rounds = options.rounds - len(options.played)
+        players = set(options.played[-1].iter_players())
+        rounds_count = options.rounds - len(options.played)
 
+    next_player = 1
+    if options.played:
+        next_player = seating._max_player_number(options.played) + 1
     for player in options.add or []:
         if player in players:
             print(
                 f"trying to add {player} but they are already in",
                 file=sys.stderr,
             )
-        players.add(player)
-    for player in options.remove or []:
-        if player not in players:
+        if player > next_player:
             print(
-                f"trying to remove {player} but they absent",
+                f"trying to add {player} but {next_player} should be added first",
                 file=sys.stderr,
             )
             return 1
+        players.add(player)
+        next_player += 1 if player == next_player else 0
+    for player in options.remove or []:
+        if player not in players:
+            print(
+                f"trying to remove {player} but they are absent",
+                file=sys.stderr,
+            )
         players.remove(player)
 
     try:
-        permutations = seating.permutations(len(players), rounds)
+        rounds = seating.get_rounds(len(players), rounds_count)
     except RuntimeError:
         print(
             "seating cannot be arranged - more rounds or players required",
@@ -172,14 +180,15 @@ def seat(options):
         return 1
 
     players = list(players)
-    if not options.archon:
+    if not options.archon and not options.played:
         random.shuffle(players)
-    players = {i: p for i, p in enumerate(players, 1)}
-    permutations = (options.played or []) + [
-        [players[i] for i in permutation] for permutation in permutations
+    permutations = {i: p for i, p in enumerate(players, 1)}
+    rounds = (options.played or []) + [
+        seating.Round.from_players([permutations[i] for i in round_.iter_players()])
+        for round_ in rounds
     ]
 
-    if rounds > 0:
+    if rounds_count > 0:
         try:
             cpus = multiprocessing.cpu_count()
         except NotImplementedError:
@@ -189,11 +198,10 @@ def seat(options):
                 pool.apply_async(
                     seating.optimise,
                     kwds=dict(
-                        permutations=permutations,
+                        rounds=rounds,
                         iterations=options.iterations,
-                        callback=functools.partial(progression, options.iterations),
                         fixed=max(1, len(options.played or [])),
-                        ignore=set((options.add or []) + (options.remove or [])),
+                        callback=functools.partial(progression, options.iterations),
                     ),
                 )
                 for _ in range(cpus)
@@ -201,8 +209,7 @@ def seat(options):
             rounds, score = min((r.get() for r in results), key=lambda x: x[1].total)
             print("", file=sys.stderr, end="")
     else:
-        rounds = [seating.Round(p) for p in permutations]
-        score = seating.score_rounds(rounds)
+        score = seating.Score(rounds)
     for round_ in rounds:
         delimiter = ","
         if options.archon:
@@ -210,7 +217,7 @@ def seat(options):
             for table in round_:
                 if len(table) == 4:
                     table.append("")
-        print(delimiter.join(str(p) for p in itertools.chain.from_iterable(round_)))
+        print(delimiter.join(str(p) for p in round_.iter_players()))
     if not options.verbose:
         return 0
     print("--------------------------------- details ---------------------------------")

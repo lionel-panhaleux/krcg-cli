@@ -36,7 +36,7 @@ def affinity(args):
         if len(A.examples) > 0:
             print(
                 "To see them:\n\tkrcg deck "
-                + " ".join('"' + card.name + '"' for card in cards)
+                + " ".join('"' + card.usual_name + '"' for card in cards)
             )
         return 0
     # do not include spoilers if affinity is within 50% of natural occurence
@@ -46,7 +46,7 @@ def affinity(args):
         if args.min > score:
             break
         print(
-            f"{card.name:<30} (in {score:.0f}% of decks, typically "
+            f"{card.usual_name:<30} (in {score:.0f}% of decks, typically "
             f"{_utils.typical_copies(A, card)})"
         )
     return 0

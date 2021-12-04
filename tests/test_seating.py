@@ -39,7 +39,7 @@ def test_add_remove(capsys):
     # Adding and removing players after first round have been played
     #
     cli_execute(
-        "seating -i 1 -p 1,2,3,4,5,6,7,8,9,10,11,12 --add 13 15 --remove 5".split()
+        "seating -i 1 -p 1,2,3,4,5,6,7,8,9,10,11,12 --add 13 14 --remove 5".split()
     )
     outerr = capsys.readouterr()
     assert outerr.err == ""
@@ -47,7 +47,7 @@ def test_add_remove(capsys):
     # played round is left untouched
     assert outerr.out.split()[0] == "1,2,3,4,5,6,7,8,9,10,11,12"
     # other rounds have new players
-    players = (set(range(1, 13)) - {5}) | {13, 15}
+    players = (set(range(1, 13)) - {5}) | {13, 14}
     assert set(int(i) for i in outerr.out.split()[1].split(",")) == players
     assert set(int(i) for i in outerr.out.split()[2].split(",")) == players
     #
@@ -124,15 +124,13 @@ def test_simple_scoring(capsys):
         "Round 3: [[4, 1, 9, 7, 2], [8, 3, 5, 6]]\n"
         "R1   0.00  OK (predator-prey)\n"
         "R2   1.00 NOK (opponent thrice): 1-2\n"
-        "R3   0.94 NOK (available vps): mean is 13.67, "
-        "[6] has 12, [3, 8, 9] have 13, [1, 2] have 15\n"
+        "R3   0.31 NOK (available vps): mean is 4.56, [6] has 4.0, [1, 2] have 5.0\n"
         "R4  16.00 NOK (opponent twice): 1-2, 1-4, 1-5, 1-7, 2-4, 2-5, 2-7, "
         "3-4, 3-5, 3-6, 4-9, 5-8, 6-8, 6-9, 7-8, 7-9\n"
         "R5   0.00  OK (fifth seat)\n"
         "R6   0.00  OK (position)\n"
         "R7   0.00  OK (same seat)\n"
-        "R8   0.82 NOK (starting transfers): mean is 8.00, "
-        "[1, 2, 4] have 7, [3, 5, 7] have 9\n"
+        "R8   0.27 NOK (starting transfers): mean is 2.67, [3, 5, 7] have 3.0\n"
         "R9   2.00 NOK (position group): 1 is 2 non-adjacent twice, "
         "5 is 8 non-adjacent twice\n"
     )

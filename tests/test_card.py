@@ -77,9 +77,10 @@ Choose a ready Camarilla vampire. If this referendum is successful, search your 
 
 -- Rulings
 If the given weapon costs blood, the target Alastor pays the cost. [LSJ 20040518]
-Requirements do not apply. [ANK 20200901]
+Requirements do not apply. If a discipline is required (eg. {Inscription}) and the Alastor vampire does not have it, the inferior version is used. [ANK 20200901] [LSJ 20040518-2]
 [LSJ 20040518]: https://groups.google.com/d/msg/rec.games.trading-cards.jyhad/4emymfUPwAM/B2SCC7L6kuMJ
 [ANK 20200901]: http://www.vekn.net/forum/rules-questions/78830-alastor-and-ankara-citadel#100653
+[LSJ 20040518-2]: https://groups.google.com/g/rec.games.trading-cards.jyhad/c/4emymfUPwAM/m/JF_o7OOoCbkJ
 """  # noqa: E501
     )
 

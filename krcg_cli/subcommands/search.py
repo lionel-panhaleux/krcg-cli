@@ -23,7 +23,7 @@ def search(args):
     if not results:
         sys.stderr.write("No match\n")
         return 1
-    results = sorted(c.name for c in results)
+    results = sorted(c.usual_name for c in results)
     if args.number and args.number < len(results):
         full = len(results)
         results = results[: args.number]
