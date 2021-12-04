@@ -88,7 +88,7 @@ def filter_twda(args):
     if args.date_to:
         decks = [d for d in decks if d.date < args.date_to]
     if args.players:
-        decks = [d for d in decks if d.players_count >= args.players]
+        decks = [d for d in decks if (d.players_count or 0) >= args.players]
     return decks
 
 
