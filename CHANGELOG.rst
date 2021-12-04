@@ -1,4 +1,4 @@
-2.5 (unreleased)
+2.5 (2021-12-04)
 ----------------
 
 - Slight changes (retro-compatible) to handle V5 Anarch
