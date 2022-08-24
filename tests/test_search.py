@@ -22,6 +22,7 @@ Pentex™ Subversion
         == """Antón de Concepción
 Crusade: Chicago
 Horatio Ballard
+Kevin Jackson
 Lachlan, Noddist
 Lodin (Olaf Holte)
 Maldavis (ADV)

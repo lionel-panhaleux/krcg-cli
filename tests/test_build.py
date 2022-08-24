@@ -12,7 +12,7 @@ def test(capsys):
 Inspired by:
  - 2019ctllpdvs         (No Name)
  - 2019bcspspdms        (No Name)
- - 2019gppwp            Bored Owain  (sorry, I just need to do it - Szewski)
+ - 2019gppwp            Bored Owain (sorry, I just need to do it - Szewski)
  - 2018pbcthbc          !Ventrue Toolbox
 Crypt (12 cards, min=19, max=31, avg=6.33)
 ------------------------------------------
