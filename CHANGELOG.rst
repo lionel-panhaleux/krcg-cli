@@ -1,4 +1,4 @@
-2.6 (unreleased)
+2.6 (2022-08-24)
 ----------------
 
 - Additional options for technical interfaces (csv, krcg format)
