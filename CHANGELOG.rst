@@ -1,7 +1,7 @@
 2.6 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Additional options for technical interfaces (csv, krcg format)
 
 
 2.5 (2021-12-04)

@@ -19,6 +19,7 @@ def add_parser(parser):
     parser.add_argument(
         "-l", "--links", action="store_true", help="display ruling links"
     )
+    parser.add_argument("-k", "--krcg", action="store_true", help="display KRCG format")
     parser.add_argument("cards", metavar="CARD", nargs="*", help="card names or IDs")
     parser.set_defaults(func=card)
 
@@ -54,13 +55,16 @@ def _display_card(args, name: str, index: int = 0) -> None:
     except ValueError:
         pass
     card = vtes.VTES[name]
-    print(card.usual_name)
+    if args.krcg:
+        print(f"{card.id}|{card.name}")
+    else:
+        print(card.usual_name)
     if args.international:
         for lang, translation in card.i18n_variants("name"):
             print(f"  {lang[:2]} -- {translation}")
     if args.short:
         return
-    print(_card_text(card))
+    print(_card_text(args, card))
     if args.international:
         for lang, translation in card.i18n_variants("card_text"):
             print(f"\n-- {lang[:2]}\n{translation}")
@@ -69,7 +73,7 @@ def _display_card(args, name: str, index: int = 0) -> None:
     print(_card_rulings(args, card))
 
 
-def _card_text(card) -> str:
+def _card_text(args, card) -> str:
     """Full text of a card (id, title, traits, costs, ...) for display purposes"""
     text = "[{}]".format("/".join(card.types))
     if card.clans:
@@ -82,13 +86,14 @@ def _card_text(card) -> str:
         text += "[{}C]".format(card.conviction_cost)
     if card.capacity:
         text += "[{}]".format(card.capacity)
-    if card.group:
+    if not args.krcg and card.group:
         text += "(g.{})".format(card.group)
     if card.burn_option:
         text += "(Burn Option)"
     if card.banned:
         text += " -- BANNED in " + card["Banned"]
-    text += " -- (#{})".format(card.id)
+    if not args.krcg:
+        text += " -- (#{})".format(card.id)
     if card.crypt and card.disciplines:
         text += "\n{}".format(" ".join(card.disciplines) or "-- No discipline")
     text += "\n{}".format(card.card_text)

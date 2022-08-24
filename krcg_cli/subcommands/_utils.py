@@ -343,7 +343,7 @@ def filter_cards(args):
     return vtes.VTES.search(**args)
 
 
-def typical_copies(A, card):
+def typical_copies(A, card, naked=False):
     deviation = math.sqrt(A.variance[card])
     min_copies = max(1, round(A.average[card] - deviation))
     max_copies = max(1, round(A.average[card] + deviation))
@@ -351,6 +351,8 @@ def typical_copies(A, card):
         ret = f"{min_copies}"
     else:
         ret = f"{min_copies}-{max_copies}"
+    if naked:
+        return ret
     if max_copies > 1:
         ret += " copies"
     else:
