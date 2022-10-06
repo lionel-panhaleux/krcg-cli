@@ -318,7 +318,7 @@ def filter_cards(args):
             "clan",
             "type",
             "group",
-            "exclude-type",
+            "exclude_type",
             "bonus",
             "text",
             "trait",
@@ -332,15 +332,13 @@ def filter_cards(args):
             "artist",
         }
     }
-    exclude_type = args.pop("exclude_type", None)
-    if exclude_type:
-        args["type"] = list(
-            args.get("type", set())
-            | (set(TypeChoice.get_choices()) - set(exclude_type))
-        )
+    exclude_type = set(args.pop("exclude_type", []))
     args["text"] = " ".join(args.pop("text") or [])
     args = {k: v for k, v in args.items() if v}
-    return vtes.VTES.search(**args)
+    ret = set(vtes.VTES.search(**args))
+    for exclude in exclude_type:
+        ret -= set(vtes.VTES.search(type=[exclude]))
+    return ret
 
 
 def typical_copies(A, card, naked=False):

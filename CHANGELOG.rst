@@ -1,7 +1,7 @@
 2.7 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Fix card filtering commands
 
 
 2.6 (2022-08-24)
