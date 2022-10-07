@@ -1,6 +1,7 @@
 2.7 (unreleased)
 ----------------
 
+- Add stats command
 - Fix card filtering commands
 
 

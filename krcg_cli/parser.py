@@ -8,6 +8,7 @@ from .subcommands import deck
 from .subcommands import format
 from .subcommands import search
 from .subcommands import seating
+from .subcommands import stats
 from .subcommands import top
 
 
@@ -22,6 +23,7 @@ affinity.add_parser(subparsers)
 build.add_parser(subparsers)
 format.add_parser(subparsers)
 seating.add_parser(subparsers)
+stats.add_parser(subparsers)
 
 
 def execute(args):
