@@ -332,7 +332,7 @@ def filter_cards(args):
             "artist",
         }
     }
-    exclude_type = set(args.pop("exclude_type", []))
+    exclude_type = set(args.pop("exclude_type") or [])
     args["text"] = " ".join(args.pop("text") or [])
     args = {k: v for k, v in args.items() if v}
     ret = set(vtes.VTES.search(**args))

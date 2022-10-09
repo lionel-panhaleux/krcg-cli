@@ -1,25 +1,17 @@
-import argparse
 import collections
 import functools
-import math
-from nis import match
 import pathlib
 import re
-import sys
-from typing import Iterable, Tuple
-from typing_extensions import Self
+from typing import Iterable
 
 from krcg import analyzer
 from krcg import deck
-from krcg import twda
-from krcg import utils as krcg_utils
-from krcg import vtes
 
 from . import _utils
 
 
 def add_parser(parser):
-    parser = parser.add_parser("stats", help="Compute stats on a deck archive")
+    parser = parser.add_parser("stats", help="compute stats on a deck archive")
     parser.add_argument(
         "-f",
         "--folder",
@@ -282,7 +274,7 @@ def stats(args):
             )
 
     print()
-    print(f"=============== Cards Statistics ===============")
+    print("=============== Cards Statistics ===============")
     print()
     for name, condition in FILTERS.items():
         top = [c for c in most_common if condition(c[0])][:10]
