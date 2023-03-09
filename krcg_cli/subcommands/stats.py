@@ -164,15 +164,15 @@ def stats(args):
     A.refresh()
     most_common = A.played.most_common()
     for dek in decks:
-        matc = re.search(
-            r"(?P<gw>\d)\s*GW\s*(?P<vp>\d+)((\.|,)(?P<vp_frac>\d))?\s*(VP|\+)",
+        match = re.search(
+            r"(?P<gw>\d)\s*GW\s*(?P<vp>\d+)((\.|,)(?P<vp_frac>\d))?",
             dek.comments or "" if args.folder else "",
             re.MULTILINE,
         )
-        if matc:
+        if match:
             dek.score = Score(
-                gw=int(matc.group("gw")),
-                vp=int(matc.group("vp")) + int(matc.group("vp_frac") or 0) / 10,
+                gw=int(match.group("gw")),
+                vp=int(match.group("vp")) + int(match.group("vp_frac") or 0) / 10,
             )
         else:
             dek.score = Score()
