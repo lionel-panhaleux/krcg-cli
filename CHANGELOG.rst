@@ -1,9 +1,11 @@
 2.7 (unreleased)
 ----------------
 
-- Add stats command
 - Fix card filtering commands
-
+- Add `stats` command
+- Add `seating` command
+- Add `twd` command
+- Add --price option to the `top` command
 
 2.6 (2022-08-24)
 ----------------

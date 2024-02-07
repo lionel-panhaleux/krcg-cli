@@ -25,6 +25,7 @@ def add_parser(parser):
     )
     _utils.add_card_filters(parser)
     _utils.add_twda_filters(parser)
+    _utils.add_price_option(parser)
     parser.set_defaults(func=top)
 
 
@@ -38,20 +39,27 @@ def top(args):
     A.refresh(condition=lambda c: c in candidates)
     if args.output == "csv":
         print(",".join(("Card name", "# decks", "# copies")))
-    for card, count in A.played.most_common()[: args.number]:
+    cards = list(A.played.most_common()[: args.number])
+    if args.price:
+        prices = _utils.get_cards_prices([c for c, _n in cards])
+    for card, count in cards:
         if args.output == "human":
-            print(
+            s = (
                 f"{card.usual_name:<30} (played in {count} decks, typically "
                 f"{_utils.typical_copies(A, card)})"
             )
         elif args.output == "csv":
-            print(
-                ",".join(
-                    (
-                        f'"{card.usual_name}"',
-                        str(count),
-                        _utils.typical_copies(A, card, naked=True),
-                    )
+            s = ",".join(
+                (
+                    f'"{card.usual_name}"',
+                    str(count),
+                    _utils.typical_copies(A, card, naked=True),
                 )
             )
+        if args.price:
+            if card.id in prices:
+                s = f"€{prices[card.id]:>5.2f} " + s
+            else:
+                s = "  N/A  " + s
+        print(s)
     return 0

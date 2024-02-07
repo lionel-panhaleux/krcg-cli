@@ -1,7 +1,7 @@
 import argparse
 import collections
-import functools
 import multiprocessing
+import multiprocessing.shared_memory
 import random
 import sys
 
@@ -75,6 +75,13 @@ yield unusable seatings listing only the players of the last round.
         help="Number of iterations to use (less is faster but may yield worse results)",
     )
     parser.add_argument(
+        "-o",
+        "--output",
+        type=argparse.FileType("a"),
+        default=sys.stdout,
+        help="File to append the result to",
+    )
+    parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
@@ -124,8 +131,12 @@ GROUPS = {
 }
 
 
-def progression(iterations, step, **kwargs):
-    print(f"\t{step / iterations * 100:.0f}%", file=sys.stderr, end="\r")
+class Progression:
+    def __init__(self, iterations: int):
+        self.iterations = iterations
+
+    def callback(self, step, **kwargs):
+        print(f"\t{step / self.iterations * 100:.0f}%", file=sys.stderr, end="\r")
 
 
 def seat(options):
@@ -171,7 +182,7 @@ def seat(options):
         players.remove(player)
 
     try:
-        rounds = seating.get_rounds(len(players), rounds_count)
+        rounds = seating.get_rounds(list(players), rounds_count)
     except RuntimeError:
         print(
             "seating cannot be arranged - more rounds or players required",
@@ -189,8 +200,9 @@ def seat(options):
     ]
 
     if rounds_count > 0:
+        progression = Progression(options.iterations)
         try:
-            cpus = multiprocessing.cpu_count()
+            cpus = min(4, multiprocessing.cpu_count())
         except NotImplementedError:
             cpus = 1
         with multiprocessing.Pool(processes=cpus) as pool:
@@ -201,7 +213,7 @@ def seat(options):
                         rounds=rounds,
                         iterations=options.iterations,
                         fixed=max(1, len(options.played or [])),
-                        callback=functools.partial(progression, options.iterations),
+                        callback=progression.callback,
                     ),
                 )
                 for _ in range(cpus)
@@ -210,19 +222,24 @@ def seat(options):
             print("", file=sys.stderr, end="")
     else:
         score = seating.Score(rounds)
-    for round_ in rounds:
+    if options.archon:
+        print(f"{len(players)}\tPlayers", file=options.output)
+    for i, round_ in enumerate(rounds, 1):
         delimiter = ","
         if options.archon:
             delimiter = "\t"
             for table in round_:
                 if len(table) == 4:
                     table.append("")
-        print(delimiter.join(str(p) for p in round_.iter_players()))
+            print(f"\tRound {i}", file=options.output, end="\t")
+        print(
+            delimiter.join(str(p) for p in round_.iter_players()),
+            file=options.output,
+        )
+
     if not options.verbose:
         return 0
-    print("--------------------------------- details ---------------------------------")
-    for i, round_ in enumerate(rounds, 1):
-        print(f"Round {i}: {round_}")
+    print(f"\n------------------------ details {len(players)} ------------------------")
     for index, (code, label, _) in enumerate(seating.RULES):
         s = f"{code} {score.rules[index]:6.2f} "
         if score.rules[index]:

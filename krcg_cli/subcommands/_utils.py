@@ -1,36 +1,119 @@
+import aiohttp
 import argparse
+import asyncio
 import arrow
-import marshal
+import html.parser
+import json
+import logging
 import math
-import tempfile
-import os
 import sys
 
+import caseconverter
+import unidecode
+
+from krcg import deck
 from krcg import twda
 from krcg import vtes
-
-VTES_FILE = os.path.join(tempfile.gettempdir(), "krcg-vtes.pyc")
-TWDA_FILE = os.path.join(tempfile.gettempdir(), "krcg-twda.pyc")
 
 
 def _init(with_twda=False):
     try:
         if not vtes.VTES:
-            vtes.VTES.from_json(marshal.load(open(VTES_FILE, "rb")))
-        if with_twda and not twda.TWDA:
-            twda.TWDA.from_json(marshal.load(open(TWDA_FILE, "rb")))
-    except FileNotFoundError:
+            vtes.VTES.load()
+        if with_twda:
+            # if TWDA existed but VTES was not loaded, load TWDA anew
+            twda.TWDA.load()
+    except:  # noqa: E722
+        sys.stderr.write("Fail to initialize - check your Internet connection.\n")
+        raise
+
+
+class CGCParser(html.parser.HTMLParser):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.price = None
+        self.in_price = False
+
+    def handle_starttag(self, tag, attrs):
+        if self.in_price:
+            return
+        if tag != "script":
+            return
+        id_ = dict(attrs).get("id")
+        if id_ == "__NEXT_DATA__":
+            self.in_price = True
+
+    def handle_endtag(self, tag):
+        if not self.in_price:
+            return
+        if tag != "script":
+            return
+        self.in_price = False
+
+    def handle_data(self, data):
+        if not self.in_price:
+            return
         try:
-            if not vtes.VTES:
-                vtes.VTES.load()
-            marshal.dump(vtes.VTES.to_json(), open(VTES_FILE, "wb"))
-            if with_twda:
-                # if TWDA existed but VTES was not loaded, load TWDA anew
-                twda.TWDA.load()
-                marshal.dump(twda.TWDA.to_json(), open(TWDA_FILE, "wb"))
-        except:  # noqa: E722
-            sys.stderr.write("Fail to initialize - check your Internet connection.\n")
-            raise
+            data = json.loads(data)
+            main_price = data["props"]["pageProps"]["product"]["price"]
+            if main_price:
+                self.price = main_price
+                return
+            for node in data["props"]["pageProps"]["product"]["variations"]["nodes"]:
+                if not self.price:
+                    self.price = node["price"]
+                else:
+                    self.price = min(self.price, node["price"])
+        except KeyError:
+            logging.getLogger().exception("failed to parse: %s", data)
+
+
+NAMES_MAP = {
+    "Carlton Van Wyk": "carlton-van-wyk-hunter",
+    "Jake Washington": "jake-washington-hunter",
+    "Pentex™ Subversion": "pentex-subversion",
+}
+
+
+async def get_cards_price_CGC(card_names, result):
+    async with aiohttp.ClientSession() as session:
+        result.extend(
+            await asyncio.gather(
+                *(
+                    get_card_price_CGC(
+                        session,
+                        "https://shop.cardgamegeek.com/shop/product/"
+                        + NAMES_MAP.get(
+                            name, caseconverter.kebabcase(unidecode.unidecode(name))
+                        ),
+                    )
+                    for name in card_names
+                ),
+                return_exceptions=True,
+            )
+        )
+
+
+async def get_card_price_CGC(session: aiohttp.ClientSession, url):
+    async with session.get(url, timeout=30) as response:
+        parser = CGCParser()
+        index = await response.text()
+        parser.feed(index)
+        return parser.price
+
+
+def add_price_option(parser):
+    parser.add_argument(
+        "--price",
+        action="store_true",
+        help="Display cards prices on the secondary market",
+    )
+
+
+def get_cards_prices(cards):
+    prices = []
+    asyncio.run(get_cards_price_CGC([c.usual_name for c in cards], prices))
+    return {c.id: p for c, p in zip(cards, prices) if not isinstance(p, Exception)}
 
 
 class NargsChoice(argparse.Action):
@@ -40,8 +123,7 @@ class NargsChoice(argparse.Action):
 
     CASE_SENSITIVE = False
 
-    def get_choices(self):
-        ...
+    def get_choices(self): ...
 
     def __call__(self, parser, namespace, values, option_string=None):
         choices = self.get_choices()
@@ -80,7 +162,7 @@ def add_twda_filters(parser):
     )
 
 
-def filter_twda(args):
+def filter_twda(args) -> list[deck.Deck]:
     _init(with_twda=True)
     decks = list(twda.TWDA.values())
     if args.date_from:
@@ -218,6 +300,14 @@ def add_card_filters(parser):
         ),
     )
     parser.add_argument(
+        "-x",
+        "--exclude-set",
+        action=SetChoice,
+        metavar="SET",
+        nargs="+",
+        help="Exclude given types ({})".format(", ".join(SetChoice.get_choices())),
+    )
+    parser.add_argument(
         "-e",
         "--exclude-type",
         action=TypeChoice,
@@ -305,6 +395,11 @@ def add_card_filters(parser):
         nargs="+",
         help="Filter by artist",
     )
+    parser.add_argument(
+        "--no-reprint",
+        action="store_true",
+        help="Filter our cards that are currently in print",
+    )
 
 
 def filter_cards(args):
@@ -318,7 +413,9 @@ def filter_cards(args):
             "clan",
             "type",
             "group",
+            "exclude_set",
             "exclude_type",
+            "no_reprint",
             "bonus",
             "text",
             "trait",
@@ -332,12 +429,34 @@ def filter_cards(args):
             "artist",
         }
     }
-    exclude_type = set(args.pop("exclude_type") or [])
+    exclude_set = set(args.pop("exclude_set", None) or [])
+    exclude_type = set(args.pop("exclude_type", None) or [])
+    if args.pop("no_reprint", None):
+        exclude_set |= {
+            "Anthology",
+            "Echoes of Gehenna",
+            "Fall of London",
+            "Fifth Edition",
+            "Fifth Edition (Anarch)",
+            "Fifth Edition (Companion)",
+            "First Blood",
+            "Heirs to the Blood Reprint",
+            "Keepers of Tradition Reprint",
+            "Lost Kindred",
+            "New Blood",
+            "New Blood II",
+            "Print on Demand",
+            "Sabbat Preconstructed",
+            "Shadows of Berlin",
+            "Twenty-Fifth Anniversary",
+        }
     args["text"] = " ".join(args.pop("text") or [])
     args = {k: v for k, v in args.items() if v}
     ret = set(vtes.VTES.search(**args))
     for exclude in exclude_type:
         ret -= set(vtes.VTES.search(type=[exclude]))
+    for exclude in exclude_set:
+        ret -= set(vtes.VTES.search(set=[exclude]))
     return ret
 
 

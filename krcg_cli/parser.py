@@ -10,6 +10,7 @@ from .subcommands import search
 from .subcommands import seating
 from .subcommands import stats
 from .subcommands import top
+from .subcommands import twd
 
 
 parser = argparse.ArgumentParser(prog="krcg", description="VTES tool")
@@ -24,6 +25,7 @@ build.add_parser(subparsers)
 format.add_parser(subparsers)
 seating.add_parser(subparsers)
 stats.add_parser(subparsers)
+twd.add_parser(subparsers)
 
 
 def execute(args):
