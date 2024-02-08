@@ -1,4 +1,4 @@
-2.7 (unreleased)
+2.7 (2024-02-08)
 ----------------
 
 - Fix card filtering commands
