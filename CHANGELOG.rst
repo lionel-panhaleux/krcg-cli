@@ -1,7 +1,7 @@
 2.8 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Fixed minor issues with the `seating` command
 
 
 2.7 (2024-02-08)
