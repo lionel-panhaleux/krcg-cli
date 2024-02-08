@@ -6,6 +6,7 @@
 - Add `seating` command
 - Add `twd` command
 - Add --price option to the `top` command
+- Packaging: PEP 517 toml Packaging
 
 2.6 (2022-08-24)
 ----------------

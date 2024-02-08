@@ -1,9 +1,7 @@
 import argparse
 import collections
-import itertools
 import multiprocessing
 import multiprocessing.shared_memory
-import random
 import sys
 
 from krcg import seating
@@ -157,25 +155,13 @@ def seat(options):
         players = set(options.played[-1].iter_players())
         rounds_count = options.rounds - len(options.played)
 
-    next_player = 1
-    if options.played:
-        next_player = (
-            max(itertools.chain(*itertools.chain.from_iterable(options.played))) + 1
-        )
     for player in options.add or []:
         if player in players:
             print(
                 f"trying to add {player} but they are already in",
                 file=sys.stderr,
             )
-        if player > next_player:
-            print(
-                f"trying to add {player} but {next_player} should be added first",
-                file=sys.stderr,
-            )
-            return 1
         players.add(player)
-        next_player += 1 if player == next_player else 0
     for player in options.remove or []:
         if player not in players:
             print(
@@ -193,14 +179,8 @@ def seat(options):
         )
         return 1
 
-    players = list(players)
-    if not options.archon and not options.played:
-        random.shuffle(players)
-    permutations = {i: p for i, p in enumerate(players, 1)}
-    rounds = (options.played or []) + [
-        seating.Round.from_players([permutations[i] for i in round_.iter_players()])
-        for round_ in rounds
-    ]
+    if options.played:
+        rounds = options.played + rounds
 
     if rounds_count > 0:
         progression = Progression(options.iterations)
@@ -242,7 +222,9 @@ def seat(options):
 
     if not options.verbose:
         return 0
-    print(f"\n------------------------ details {len(players)} ------------------------")
+    print(f"\n------------------- details ({len(players)} players) -------------------")
+    for i, round_ in enumerate(rounds, 1):
+        print(f"Round {i}: {round_}", file=options.output)
     for index, (code, label, _) in enumerate(seating.RULES):
         s = f"{code} {score.rules[index]:6.2f} "
         if score.rules[index]:

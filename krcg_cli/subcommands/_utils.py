@@ -125,8 +125,7 @@ class NargsChoice(argparse.Action):
 
     CASE_SENSITIVE = False
 
-    def get_choices(self):
-        ...
+    def get_choices(self): ...
 
     def __call__(self, parser, namespace, values, option_string=None):
         choices = self.get_choices()

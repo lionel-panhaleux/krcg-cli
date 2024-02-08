@@ -1,8 +1,8 @@
 # KRCG CLI
 
 [![PyPI version](https://badge.fury.io/py/krcg-cli.svg)](https://badge.fury.io/py/krcg-cli)
-[![Validation](https://github.com/lionel-panhaleux/krcg-cli/workflows/Validation/badge.svg)](https://github.com/lionel-panhaleux/krcg-cli/actions)
-[![Python version](https://img.shields.io/badge/python-3.8-blue)](https://www.python.org/downloads/)
+[![Validation](https://github.com/lionel-panhaleux/krcg-cli/actions/workflows/validation.yml/badge.svg)](https://github.com/lionel-panhaleux/krcg-cli/actions/workflows/validation.yml)
+[![Python version](https://img.shields.io/badge/python-3.11-blue)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/License-MIT-blue)](https://opensource.org/licenses/MIT)
 [![Code Style](https://img.shields.io/badge/code%20style-black-black)](https://github.com/psf/black)
 

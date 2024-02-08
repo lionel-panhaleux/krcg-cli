@@ -11,7 +11,7 @@ def test(capsys):
 
 VTES tool
 
-optional arguments:
+options:
   -h, --help  show this help message and exit
 
 subcommands:

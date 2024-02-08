@@ -34,14 +34,14 @@ def test_base(capfd):
     assert set(int(i) for i in outerr.out.split()[2].split(",")).issubset(players)
 
 
-def test_add_remove(capsys):
+def test_add_remove(capfd):
     #
     # Adding and removing players after first round have been played
     #
     cli_execute(
         "seating -i 1 -p 1,2,3,4,5,6,7,8,9,10,11,12 --add 13 14 --remove 5".split()
     )
-    outerr = capsys.readouterr()
+    outerr = capfd.readouterr()
     assert outerr.err == ""
     assert outerr.out
     # played round is left untouched
@@ -54,7 +54,7 @@ def test_add_remove(capsys):
     # Down to 11 players with 2 rounds left is doable, it adds a round
     #
     cli_execute("seating -i 1 -p 1,2,3,4,5,6,7,8,9,10,11,12 --remove 5".split())
-    outerr = capsys.readouterr()
+    outerr = capfd.readouterr()
     assert outerr.err == ""
     assert outerr.out
     assert outerr.out.split()[0] == "1,2,3,4,5,6,7,8,9,10,11,12"
@@ -66,7 +66,7 @@ def test_add_remove(capsys):
     # Down to 7 players with 2 rounds left is doable too
     #
     cli_execute("seating -i 1 -p 1,2,3,4,5,6,7,8,9 --remove 4 5".split())
-    outerr = capsys.readouterr()
+    outerr = capfd.readouterr()
     assert outerr.err == ""
     assert outerr.out
     assert outerr.out.split()[0] == "1,2,3,4,5,6,7,8,9"
@@ -83,7 +83,7 @@ def test_add_remove(capsys):
             "12,11,10,9,8,7,6,5,4,3,2,1 --remove 5"
         ).split()
     )
-    outerr = capsys.readouterr()
+    outerr = capfd.readouterr()
     assert (
         outerr.err == "seating cannot be arranged - more rounds or players required\n"
     )
@@ -97,7 +97,7 @@ def test_add_remove(capsys):
             "12,11,10,9,8,7,6,5,4,3,2,1 --remove 5 6"
         ).split()
     )
-    outerr = capsys.readouterr()
+    outerr = capfd.readouterr()
     assert outerr.err == ""
     assert outerr.out
     assert outerr.out.split()[0] == "1,2,3,4,5,6,7,8,9,10,11,12"
@@ -106,19 +106,20 @@ def test_add_remove(capsys):
     assert set(int(i) for i in outerr.out.split()[2].split(",")) == players
 
 
-def test_simple_scoring(capsys):
+def test_simple_scoring(capfd):
     cli_execute(
         (
             "seating -vi 0 -p " "1,2,3,4,5,6,7,8,9 2,5,7,1,8,9,4,6,3 4,1,9,7,2,8,3,5,6"
         ).split()
     )
-    outerr = capsys.readouterr()
+    outerr = capfd.readouterr()
     assert outerr.err == ""
     assert outerr.out == (
         "1,2,3,4,5,6,7,8,9\n"
         "2,5,7,1,8,9,4,6,3\n"
         "4,1,9,7,2,8,3,5,6\n"
-        "--------------------------------- details ---------------------------------\n"
+        "\n"
+        "------------------- details (9 players) -------------------\n"
         "Round 1: [[1, 2, 3, 4, 5], [6, 7, 8, 9]]\n"
         "Round 2: [[2, 5, 7, 1, 8], [9, 4, 6, 3]]\n"
         "Round 3: [[4, 1, 9, 7, 2], [8, 3, 5, 6]]\n"

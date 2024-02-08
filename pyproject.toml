@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "krcg-cli"
+version = "2.7.dev0"
+authors = [
+    { name = "Lionel Panhaleux", email = "lionel.panhaleux+krcg@gmail.com" },
+]
+description = "KRCG Command Line Interface for VTES"
+keywords = [
+    "vtes",
+    "Vampire: The Eternal Struggle",
+    "CCG",
+    "TWD",
+    "TWDA",
+    "CLI",
+]
+readme = "README.md"
+requires-python = ">=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: MIT License",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Environment :: Console",
+    "Topic :: Games/Entertainment",
+]
+dependencies = [
+    "aiohttp",
+    "arrow",
+    "case-converter",
+    "requests",
+    "tqdm",
+    "unidecode",
+    "krcg>=3.7",
+]
+
+[project.optional-dependencies]
+dev = ["black", "ipython", "pytest", "ruff", "zest.releaser[recommended]"]
+
+[project.scripts]
+krcg = "krcg_cli:main"
+
+[project.urls]
+Repository = "https://github.com/lionel-panhaleux/krcg-cli"
+
+[tool.setuptools.packages.find]
+include = ["krcg_cli*"]
+
+[tool.zest-releaser]
+create-wheel = true
