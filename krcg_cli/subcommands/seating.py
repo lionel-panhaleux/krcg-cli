@@ -222,7 +222,10 @@ def seat(options):
 
     if not options.verbose:
         return 0
-    print(f"\n------------------- details ({len(players)} players) -------------------")
+    print(
+        f"\n------------------- details ({len(players)} players) -------------------",
+        file=options.output,
+    )
     for i, round_ in enumerate(rounds, 1):
         print(f"Round {i}: {round_}", file=options.output)
     for index, (code, label, _) in enumerate(seating.RULES):
@@ -231,7 +234,7 @@ def seat(options):
             s += f"NOK ({label}): {format_anomalies(score, code)}"
         else:
             s += f" OK ({label})"
-        print(s)
+        print(s, file=options.output)
     return 0
 
 

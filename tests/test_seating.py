@@ -1,120 +1,114 @@
+import tempfile
 from krcg_cli.parser import execute as cli_execute
 
 
-def test_base(capfd):
+def local_execute(line: str):
+    """For whatever reason, capsys is really struggling to get it right here"""
+    args = line.split()
+    tmp = tempfile.NamedTemporaryFile("r")
+    args.insert(1, "-o")
+    args.insert(2, tmp.name)
+    cli_execute(args)
+    tmp.flush()
+    tmp.seek(0)
+    return tmp.read()
+
+
+def test_base():
     #
     # Base usage, defaults to 3 rounds
     #
-    cli_execute("seating -i 1 12".split())
-    outerr = capfd.readouterr()
-    assert outerr.err == ""
-    assert outerr.out
-    assert set(int(i) for i in outerr.out.split()[0].split(",")) == set(range(1, 13))
-    assert set(int(i) for i in outerr.out.split()[1].split(",")) == set(range(1, 13))
-    assert set(int(i) for i in outerr.out.split()[2].split(",")) == set(range(1, 13))
+    result = local_execute("seating -i 1 12")
+    assert result
+    assert set(int(i) for i in result.split()[0].split(",")) == set(range(1, 13))
+    assert set(int(i) for i in result.split()[1].split(",")) == set(range(1, 13))
+    assert set(int(i) for i in result.split()[2].split(",")) == set(range(1, 13))
     #
     # Two rounds
     #
-    cli_execute("seating -i 1 -r 2 12".split())
-    outerr = capfd.readouterr()
-    assert outerr.err == ""
-    assert outerr.out
-    assert set(int(i) for i in outerr.out.split()[0].split(",")) == set(range(1, 13))
-    assert set(int(i) for i in outerr.out.split()[1].split(",")) == set(range(1, 13))
+    result = local_execute("seating -i 1 -r 2 12")
+    assert result
+    assert set(int(i) for i in result.split()[0].split(",")) == set(range(1, 13))
+    assert set(int(i) for i in result.split()[1].split(",")) == set(range(1, 13))
     #
     # Two rounds for six players results in three intertwined rounds with sit outs
     #
-    cli_execute("seating -i 1 -r 2 6".split())
-    outerr = capfd.readouterr()
-    assert outerr.err == ""
-    assert outerr.out
+    result = local_execute("seating -i 1 -r 2 6")
+    assert result
     players = set(range(1, 7))
-    assert set(int(i) for i in outerr.out.split()[0].split(",")).issubset(players)
-    assert set(int(i) for i in outerr.out.split()[1].split(",")).issubset(players)
-    assert set(int(i) for i in outerr.out.split()[2].split(",")).issubset(players)
+    round_1 = [int(i) for i in result.split()[0].split(",")]
+    round_2 = [int(i) for i in result.split()[1].split(",")]
+    round_3 = [int(i) for i in result.split()[2].split(",")]
+    assert set(round_1).issubset(players)
+    assert set(round_2).issubset(players)
+    assert set(round_3).issubset(players)
 
 
-def test_add_remove(capfd):
+def test_add_remove(capsys):
     #
     # Adding and removing players after first round have been played
     #
-    cli_execute(
-        "seating -i 1 -p 1,2,3,4,5,6,7,8,9,10,11,12 --add 13 14 --remove 5".split()
+    result = local_execute(
+        "seating -i 1 -p 1,2,3,4,5,6,7,8,9,10,11,12 --add 13 14 --remove 5"
     )
-    outerr = capfd.readouterr()
-    assert outerr.err == ""
-    assert outerr.out
+    assert result
     # played round is left untouched
-    assert outerr.out.split()[0] == "1,2,3,4,5,6,7,8,9,10,11,12"
+    assert result.split()[0] == "1,2,3,4,5,6,7,8,9,10,11,12"
     # other rounds have new players
     players = (set(range(1, 13)) - {5}) | {13, 14}
-    assert set(int(i) for i in outerr.out.split()[1].split(",")) == players
-    assert set(int(i) for i in outerr.out.split()[2].split(",")) == players
+    assert set(int(i) for i in result.split()[1].split(",")) == players
+    assert set(int(i) for i in result.split()[2].split(",")) == players
     #
     # Down to 11 players with 2 rounds left is doable, it adds a round
     #
-    cli_execute("seating -i 1 -p 1,2,3,4,5,6,7,8,9,10,11,12 --remove 5".split())
-    outerr = capfd.readouterr()
-    assert outerr.err == ""
-    assert outerr.out
-    assert outerr.out.split()[0] == "1,2,3,4,5,6,7,8,9,10,11,12"
+    result = local_execute("seating -i 1 -p 1,2,3,4,5,6,7,8,9,10,11,12 --remove 5")
+    assert result
+    assert result.split()[0] == "1,2,3,4,5,6,7,8,9,10,11,12"
     players = set(range(1, 13)) - {5}
-    assert set(int(i) for i in outerr.out.split()[1].split(",")).issubset(players)
-    assert set(int(i) for i in outerr.out.split()[2].split(",")).issubset(players)
-    assert set(int(i) for i in outerr.out.split()[3].split(",")).issubset(players)
+    assert set(int(i) for i in result.split()[1].split(",")).issubset(players)
+    assert set(int(i) for i in result.split()[2].split(",")).issubset(players)
+    assert set(int(i) for i in result.split()[3].split(",")).issubset(players)
     #
     # Down to 7 players with 2 rounds left is doable too
     #
-    cli_execute("seating -i 1 -p 1,2,3,4,5,6,7,8,9 --remove 4 5".split())
-    outerr = capfd.readouterr()
-    assert outerr.err == ""
-    assert outerr.out
-    assert outerr.out.split()[0] == "1,2,3,4,5,6,7,8,9"
+    result = local_execute("seating -i 1 -p 1,2,3,4,5,6,7,8,9 --remove 4 5")
+    assert result
+    assert result.split()[0] == "1,2,3,4,5,6,7,8,9"
     players = set(range(1, 10)) - {4, 5}
-    assert set(int(i) for i in outerr.out.split()[1].split(",")).issubset(players)
-    assert set(int(i) for i in outerr.out.split()[2].split(",")).issubset(players)
-    assert set(int(i) for i in outerr.out.split()[3].split(",")).issubset(players)
+    assert set(int(i) for i in result.split()[1].split(",")).issubset(players)
+    assert set(int(i) for i in result.split()[2].split(",")).issubset(players)
+    assert set(int(i) for i in result.split()[3].split(",")).issubset(players)
     #
     # down to 11 players with a single round left to play is impossible
     #
-    cli_execute(
-        (
-            "seating -i 1 -p 1,2,3,4,5,6,7,8,9,10,11,12 "
-            "12,11,10,9,8,7,6,5,4,3,2,1 --remove 5"
-        ).split()
+    result = local_execute(
+        "seating -i 1 -p 1,2,3,4,5,6,7,8,9,10,11,12 "
+        "12,11,10,9,8,7,6,5,4,3,2,1 --remove 5"
     )
-    outerr = capfd.readouterr()
+    outerr = capsys.readouterr()
     assert (
         outerr.err == "seating cannot be arranged - more rounds or players required\n"
     )
-    assert outerr.out == ""
+    assert result == ""
     #
     # but 10 players with a single round is OK
     #
-    cli_execute(
-        (
-            "seating -i 1 -p 1,2,3,4,5,6,7,8,9,10,11,12 "
-            "12,11,10,9,8,7,6,5,4,3,2,1 --remove 5 6"
-        ).split()
+    result = local_execute(
+        "seating -i 1 -p 1,2,3,4,5,6,7,8,9,10,11,12 "
+        "12,11,10,9,8,7,6,5,4,3,2,1 --remove 5 6"
     )
-    outerr = capfd.readouterr()
-    assert outerr.err == ""
-    assert outerr.out
-    assert outerr.out.split()[0] == "1,2,3,4,5,6,7,8,9,10,11,12"
-    assert outerr.out.split()[1] == "12,11,10,9,8,7,6,5,4,3,2,1"
+    assert result
+    assert result.split()[0] == "1,2,3,4,5,6,7,8,9,10,11,12"
+    assert result.split()[1] == "12,11,10,9,8,7,6,5,4,3,2,1"
     players = set(range(1, 13)) - {5, 6}
-    assert set(int(i) for i in outerr.out.split()[2].split(",")) == players
+    assert set(int(i) for i in result.split()[2].split(",")) == players
 
 
-def test_simple_scoring(capfd):
-    cli_execute(
-        (
-            "seating -vi 0 -p " "1,2,3,4,5,6,7,8,9 2,5,7,1,8,9,4,6,3 4,1,9,7,2,8,3,5,6"
-        ).split()
+def test_simple_scoring():
+    result = local_execute(
+        "seating -vi 0 -p " "1,2,3,4,5,6,7,8,9 2,5,7,1,8,9,4,6,3 4,1,9,7,2,8,3,5,6"
     )
-    outerr = capfd.readouterr()
-    assert outerr.err == ""
-    assert outerr.out == (
+    assert result == (
         "1,2,3,4,5,6,7,8,9\n"
         "2,5,7,1,8,9,4,6,3\n"
         "4,1,9,7,2,8,3,5,6\n"
