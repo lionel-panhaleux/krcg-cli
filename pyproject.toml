@@ -37,7 +37,7 @@ dependencies = [
     "requests",
     "tqdm",
     "unidecode",
-    "krcg>=3.7",
+    "krcg>=3.8",
 ]
 
 [project.optional-dependencies]
