@@ -1,4 +1,4 @@
-2.8 (unreleased)
+2.8 (2024-02-08)
 ----------------
 
 - Fixed minor issues with the `seating` command
