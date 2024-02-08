@@ -61,13 +61,13 @@ Jessica (ADV)
 Joseph Cambridge
 Karen Suadela
 Loki's Gift
+Maila
 Maxwell
 Natasha Volfchek
-Perfect Paragon
-... 3 more results, use -n 13 to display them.
+... 4 more results, use -n 14 to display them.
 """
     )
-    cli_execute(["search", "--bonus", "stealth", "votes", "-n", "13"])
+    cli_execute(["search", "--bonus", "stealth", "votes", "-n", "14"])
     outerr = capsys.readouterr()
     assert outerr.err == ""
     assert (
@@ -79,6 +79,7 @@ Jessica (ADV)
 Joseph Cambridge
 Karen Suadela
 Loki's Gift
+Maila
 Maxwell
 Natasha Volfchek
 Perfect Paragon

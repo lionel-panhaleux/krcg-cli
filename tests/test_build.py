@@ -2,7 +2,7 @@ from krcg_cli.parser import execute as cli_execute
 
 
 def test(capsys):
-    cli_execute(["build", "--from", "2018", "--to", "2020", "KRCG"])
+    cli_execute(["build", "--from", "2013", "--to", "2014", "KRCG"])
     outerr = capsys.readouterr()
     assert outerr.err == ""
     assert (
@@ -10,69 +10,79 @@ def test(capsys):
         == """Created by: KRCG
 
 Inspired by:
- - 2019ctllpdvs         (No Name)
- - 2019bcspspdms        (No Name)
- - 2019gppwp            Bored Owain (sorry, I just need to do it - Szewski)
- - 2018pbcthbc          !Ventrue Toolbox
-Crypt (12 cards, min=19, max=31, avg=6.33)
+ - 2013fsfiiifb         !Ventrue
+ - 2013bdmspb           Ventrue! Grinder
+ - 2013addbspb          Ventrue! Grinder
+ - 2013tnotbspb         Ventrue! Grinder
+ - 2013bssbotuk         Gents on the town, twirling their canes v7 2013
+ - 2013ukdcp            Owain's Grindhouse
+ - 2013ecqllf           (No Name)
+ - 2013fdss             Ventrue Anti Grind
+Crypt (12 cards, min=16, max=30, avg=5.75)
 ------------------------------------------
-2x Owain Evans, The Wanderer   8 AUS DOM FOR cel pre              Ventrue antitribu:3
-2x Blackhorse Tanner           7 AUS DOM FOR                      Ventrue antitribu:3
-1x Joseph O'Grady              7 DOM FOR aus cel                  Ventrue antitribu:3
-1x Charice Fontaigne           6 AUS DOM for pot                  Ventrue antitribu:3
-2x Jefferson Foster            6 AUS DOM for tha      bishop      Ventrue antitribu:4
-1x Neighbor John               5 AUS dom for                      Ventrue antitribu:4
-1x Jesse Menks                 8 AUS DOM FOR ani      archbishop  Ventrue antitribu:3
-1x Jephta Hester               5 DOM FOR aus                      Ventrue antitribu:4
-1x Ulrike Rothbart             3 dom for                          Ventrue antitribu:4
+1x Jephta Hester               5 DOM FOR aus                  Ventrue antitribu:4
+1x Ulrike Rothbart             3 dom for                      Ventrue antitribu:4
+2x Owain Evans, The Wanderer   8 AUS DOM FOR cel pre          Ventrue antitribu:3
+2x Blackhorse Tanner           7 AUS DOM FOR                  Ventrue antitribu:3
+2x Neighbor John               5 AUS dom for                  Ventrue antitribu:4
+1x Lana Butcher                3 dom for                      Ventrue:3
+1x Jefferson Foster            6 AUS DOM for tha      bishop  Ventrue antitribu:4
+1x Joseph O'Grady              7 DOM FOR aus cel              Ventrue antitribu:3
+1x Ilyana Ravidovich           5 aus dom for pre              Ventrue:3
 
 Library (90 cards)
-Master (19; 5 trifle)
+Master (17; 6 trifle)
 1x Anarch Troublemaker
-2x Blood Doll
 1x Channel 10
 1x Corporate Hunting Ground
 2x Dreams of the Sphinx
-1x Giant's Blood
 1x KRCG News Radio
 1x Misdirection
 1x Pentex(TM) Subversion
-1x Powerbase: Barranquilla
 1x Powerbase: Montreal
-3x Vessel
+4x Vessel
+1x Vox Domini
 1x Wall Street Night, Financial Newspaper
 2x Wider View
 
-Action (14)
-1x Abbot
-13x Govern the Unaligned
+Action (10)
+10x Govern the Unaligned
 
-Equipment (3)
+Ally (1)
+1x Carlton Van Wyk
+
+Equipment (2)
 1x Bowl of Convergence
-1x Heart of Nizchetus
 1x Ivory Bow
 
-Action Modifier (10)
+Action Modifier (9)
 2x Bonding
 5x Conditioning
-2x Daring the Dawn
+1x Daring the Dawn
 1x Day Operation
 
-Reaction (28)
-6x Deflection
+Reaction (31)
+5x Deflection
 2x Delaying Tactics
 2x Eagle's Sight
 2x Enhanced Senses
-5x Eyes of Argus
+3x Eyes of Argus
+2x Forced Awakening
 2x My Enemy's Enemy
-5x On the Qui Vive
+4x On the Qui Vive
+2x Redirection
 4x Telepathic Misdirection
+3x Wake with Evening's Freshness
 
-Combat (16)
-4x Hidden Strength
-3x Indomitability
+Combat (18)
+5x Hidden Strength
+4x Indomitability
 4x Rolling with the Punches
 5x Weighted Walking Stick
+
+Event (2)
+1x Scourge of the Enochians
+1x Uncoiling, The
 """
     )
     cli_execute(["build", "Foobar"])

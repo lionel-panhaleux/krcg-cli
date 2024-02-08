@@ -20,8 +20,10 @@ def _init(with_twda=False):
     try:
         if not vtes.VTES:
             vtes.VTES.load()
-        if with_twda:
-            # if TWDA existed but VTES was not loaded, load TWDA anew
+            if with_twda:
+                # if TWDA existed but VTES was not loaded, load TWDA anew
+                twda.TWDA.load()
+        if with_twda and not twda.TWDA:
             twda.TWDA.load()
     except:  # noqa: E722
         sys.stderr.write("Fail to initialize - check your Internet connection.\n")
@@ -123,7 +125,8 @@ class NargsChoice(argparse.Action):
 
     CASE_SENSITIVE = False
 
-    def get_choices(self): ...
+    def get_choices(self):
+        ...
 
     def __call__(self, parser, namespace, values, option_string=None):
         choices = self.get_choices()

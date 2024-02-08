@@ -1,12 +1,12 @@
 from krcg_cli.parser import execute as cli_execute
 
 
-def test_base(capsys):
+def test_base(capfd):
     #
     # Base usage, defaults to 3 rounds
     #
     cli_execute("seating -i 1 12".split())
-    outerr = capsys.readouterr()
+    outerr = capfd.readouterr()
     assert outerr.err == ""
     assert outerr.out
     assert set(int(i) for i in outerr.out.split()[0].split(",")) == set(range(1, 13))
@@ -16,7 +16,7 @@ def test_base(capsys):
     # Two rounds
     #
     cli_execute("seating -i 1 -r 2 12".split())
-    outerr = capsys.readouterr()
+    outerr = capfd.readouterr()
     assert outerr.err == ""
     assert outerr.out
     assert set(int(i) for i in outerr.out.split()[0].split(",")) == set(range(1, 13))
@@ -25,7 +25,7 @@ def test_base(capsys):
     # Two rounds for six players results in three intertwined rounds with sit outs
     #
     cli_execute("seating -i 1 -r 2 6".split())
-    outerr = capsys.readouterr()
+    outerr = capfd.readouterr()
     assert outerr.err == ""
     assert outerr.out
     players = set(range(1, 7))

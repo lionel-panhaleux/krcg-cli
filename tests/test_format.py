@@ -1,3 +1,5 @@
+import arrow
+import datetime
 from krcg_cli.parser import execute as cli_execute
 
 
@@ -69,7 +71,9 @@ Event (4)
     outerr = capsys.readouterr()
     assert outerr.err == ""
     assert outerr.out == (
-        """Crypt (12 cards, min=7, max=24, avg=3.75)
+        f"""{arrow.get(datetime.date.today()).format("MMMM Do YYYY")}
+
+Crypt (12 cards, min=7, max=24, avg=3.75)
 -----------------------------------------
 1x Gilbert Duane          7 AUS DOM OBF      prince  Malkavian:1
 1x Mariel, Lady Thunder   7 DOM OBF aus tha          Malkavian:1
@@ -232,8 +236,8 @@ Crypt:
     assert outerr.err == ""
     assert (
         outerr.out
-        == """{
-  "crypt": {
+        == f'{{\n  "date": "{datetime.date.today().isoformat()}",\n'
+        + """  "crypt": {
     "count": 12,
     "cards": [
       {

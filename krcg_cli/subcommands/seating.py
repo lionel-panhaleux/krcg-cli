@@ -1,5 +1,6 @@
 import argparse
 import collections
+import itertools
 import multiprocessing
 import multiprocessing.shared_memory
 import random
@@ -158,7 +159,9 @@ def seat(options):
 
     next_player = 1
     if options.played:
-        next_player = seating._max_player_number(options.played) + 1
+        next_player = (
+            max(itertools.chain(*itertools.chain.from_iterable(options.played))) + 1
+        )
     for player in options.add or []:
         if player in players:
             print(

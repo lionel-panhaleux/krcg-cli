@@ -26,5 +26,6 @@ subcommands:
     format    format a decklist
     seating   compute optimal seating
     stats     compute stats on a deck archive
+    twd       display TWD statistics
 """  # noqa: W293
     )

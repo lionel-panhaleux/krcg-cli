@@ -14,13 +14,13 @@ def test(capsys):
         outerr.out
         == """[2010tcdbng     ]===================================================
 Trading Card Day
-Bad Naumheim, Germany
+Bad Nauheim, Germany
 May 8th 2010
 2R+F
 10 players
 Rudolf Scholz
 
--- 4vp in the final
+-- +4
 
 Deck Name: The Storage Procurers
 
