@@ -57,7 +57,7 @@ def top(args):
                 )
             )
         if args.price:
-            if card.id in prices:
+            if prices.get(card.id):
                 s = f"€{prices[card.id]:>5.2f} " + s
             else:
                 s = "  N/A  " + s

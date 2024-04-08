@@ -3,6 +3,7 @@ import argparse
 import asyncio
 import arrow
 import html.parser
+import itertools
 import json
 import logging
 import math
@@ -74,26 +75,65 @@ NAMES_MAP = {
     "Carlton Van Wyk": "carlton-van-wyk-hunter",
     "Jake Washington": "jake-washington-hunter",
     "Pentex™ Subversion": "pentex-subversion",
+    "Kuyén": "kuyen-promo",
+    "CrimethInc.": "crimethinc",
+    "Mylan Horseed": "mylan-horseed-goblin",
+    "Rego Motum": "rego-motus",
+    "Nephandus": "nephandus-mage",
+    "Veneficti": "veneficti-mage",
+    "Wendell Delburton": "wendell-delburton-hunter",
+    "Neighborhood Watch Commander": "neighborhood-watch-commander-hunter",
+    "Ambrosius, The Ferryman": "ambrosius-the-ferryman-wraith",
+    "Draeven Softfoot": "draeven-softfoot-changeling",
+    "Shadow Court Satyr": "shadow-court-satyr-changeling",
+    "Thadius Zho": "thadius-zho-mage",
+    "Amam the Devourer": "amam-the-devourer-bane-mummy",
+    "Sacré-Cœur Cathedral, France": "sacre-cour-cathedral-france",
+    "Akhenaten, The Sun Pharaoh": "akhenaten-the-sun-pharaoh-mummy",
+    "Brigitte Gebauer": "brigitte-gebauer-wraith",
+    "Masquer": "masquer-wraith",
+    "Kherebutu": "kherebutu-bane-mummy",
+    "Mehemet of the Ahl-i-Batin": "mehemet-of-the-ahl-i-batin-mage",
+    "Dauntain Black Magician": "dauntain-black-magician-changeling",
+    "The Meddling of Semsith": "meddling-of-semsith",
+    "The Khabar: Community": "khabar-the-community",
+    "SchreckNET": "schrecknet",
+    "Praxis Seizure: Washington, D.C.": "praxis-seizure-washington-d-c",
+    "Crusade: Washington, D.C.": "crusade-washington-d-c",
+    "Powerbase: Washington, D.C.": "powerbase-washington-d-c",
+    "Sacré-Cœur Cathedral, France": "sacre-cour-cathedral-france",
+    "The Crimson Sentinel": "crimson-sentinel",
+    "47th Street Royals": "47th-street-royal",
+    "Kpist m/45": "kpist-m-45",
 }
+
+
+def batched(iterable, n):
+    # py 3.12 function
+    # batched('ABCDEFG', 3) --> ABC DEF G
+    it = iter(iterable)
+    while batch := tuple(itertools.islice(it, n)):
+        yield batch
 
 
 async def get_cards_price_CGC(card_names, result):
     async with aiohttp.ClientSession() as session:
-        result.extend(
-            await asyncio.gather(
-                *(
-                    get_card_price_CGC(
-                        session,
-                        "https://shop.cardgamegeek.com/shop/product/"
-                        + NAMES_MAP.get(
-                            name, caseconverter.kebabcase(unidecode.unidecode(name))
-                        ),
-                    )
-                    for name in card_names
-                ),
-                return_exceptions=True,
+        for batch in batched(card_names, n=50):
+            result.extend(
+                await asyncio.gather(
+                    *(
+                        get_card_price_CGC(
+                            session,
+                            "https://shop.cardgamegeek.com/shop/product/"
+                            + NAMES_MAP.get(
+                                name, caseconverter.kebabcase(unidecode.unidecode(name))
+                            ),
+                        )
+                        for name in batch
+                    ),
+                    return_exceptions=True,
+                )
             )
-        )
 
 
 async def get_card_price_CGC(session: aiohttp.ClientSession, url):

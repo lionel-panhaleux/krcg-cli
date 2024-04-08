@@ -164,6 +164,12 @@ def stats(args):
     A.refresh()
     most_common = A.played.most_common()
     for dek in decks:
+        if dek.score:
+            dek.score = Score(
+                gw=int(dek.score.game_wins or 0),
+                vp=float(dek.score.round_vps or 0) + float(dek.score.finals_vps or 0),
+            )
+            continue
         match = re.search(
             r"(?P<gw>\d)\s*GW\s*(?P<vp>\d+)((\.|,)(?P<vp_frac>\d))?",
             dek.comments or "" if args.folder else "",
