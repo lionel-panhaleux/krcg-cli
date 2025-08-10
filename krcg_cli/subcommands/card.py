@@ -1,5 +1,6 @@
 import sys
 
+from krcg import cards
 from krcg import vtes
 
 from . import _utils
@@ -20,6 +21,7 @@ def add_parser(parser):
         "-l", "--links", action="store_true", help="display ruling links"
     )
     parser.add_argument("-k", "--krcg", action="store_true", help="display KRCG format")
+    _utils.add_price_option(parser)
     parser.add_argument("cards", metavar="CARD", nargs="*", help="card names or IDs")
     parser.set_defaults(func=card)
 
@@ -27,38 +29,46 @@ def add_parser(parser):
 def card(args):
     """Display cards, their text and rulings"""
     _utils._init()
-    index = 0
-    cards = args.cards
-    if not cards and not sys.stdin.isatty():
+    card_names = args.cards
+    if not card_names and not sys.stdin.isatty():
         cards = sys.stdin.read().splitlines()
-    try:
-        for name in cards:
-            _display_card(args, name, index)
-            index += 1
-        return 0
-    except KeyError:
-        if index == 0:
-            try:
-                _display_card(args, " ".join(cards))
-                return 0
-            except KeyError:
-                pass
-    sys.stderr.write("Card not found\n")
-    return 1
-
-
-def _display_card(args, name: str, index: int = 0) -> None:
-    if not args.short and index > 0:
+    cards = []
+    for index, name in enumerate(card_names):
+        try:
+            name = int(name)
+        except ValueError:
+            pass
+        try:
+            cards.append(vtes.VTES[name])
+        except KeyError:
+            if index == 0:
+                try:
+                    cards.append(vtes.VTES[" ".join(card_names)])
+                    break
+                except KeyError:
+                    sys.stderr.write(f"Card not found: {name}")
+                    return 1
+    prices = None
+    if args.price:
+        print("Fetching prices... (it takes a minute)")
+        prices = _utils.get_cards_prices(cards)
+    for card in cards:
+        _display_card(args, card, prices)
         print()
-    try:
-        name = int(name)
-    except ValueError:
-        pass
-    card = vtes.VTES[name]
+
+
+def _display_card(args, card: cards.Card, prices: dict[int, str] | None = None) -> None:
     if args.krcg:
-        print(f"{card.id}|{card.name}")
+        name_line = f"{card.id}|{card.name}"
     else:
-        print(card.usual_name)
+        name_line = card.usual_name
+    if args.price:
+        prices = prices or _utils.get_cards_prices([card])
+        if prices.get(card.id):
+            name_line = f"€{prices[card.id]:>5.2f} " + name_line
+        else:
+            name_line = "  N/A  " + name_line
+    print(name_line)
     if args.international:
         for lang, translation in card.i18n_variants("name"):
             print(f"  {lang[:2]} -- {translation}")

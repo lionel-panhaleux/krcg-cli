@@ -152,7 +152,7 @@ def add_price_option(parser):
     )
 
 
-def get_cards_prices(cards):
+def get_cards_prices(cards) -> dict[int, str]:
     prices = []
     asyncio.run(get_cards_price_CGC([c.usual_name for c in cards], prices))
     return {c.id: p for c, p in zip(cards, prices) if not isinstance(p, Exception)}
