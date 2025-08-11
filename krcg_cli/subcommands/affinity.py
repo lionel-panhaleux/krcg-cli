@@ -1,3 +1,5 @@
+"""Display cards affinity (most played together)."""
+
 import sys
 
 from krcg import analyzer
@@ -7,6 +9,7 @@ from . import _utils
 
 
 def add_parser(parser):
+    """Add parser for affinity subcommand."""
     _utils._init()
     parser = parser.add_parser(
         "affinity", help="display cards affinity (most played together)"
@@ -23,6 +26,7 @@ def add_parser(parser):
 
 
 def affinity(args):
+    """Display cards affinity (most played together)."""
     decks = _utils.filter_twda(args)
     try:
         cards = [vtes.VTES[name] for name in args.cards]

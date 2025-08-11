@@ -1,13 +1,15 @@
+"""Compute optimal seating."""
+
 import argparse
 import collections
 import multiprocessing
-import multiprocessing.shared_memory
 import sys
 
 from krcg import seating
 
 
 def add_parser(parser):
+    """Add parser for seating subcommand."""
     parser = parser.add_parser(
         "seating",
         help="compute optimal seating",
@@ -131,14 +133,23 @@ GROUPS = {
 
 
 class Progression:
-    def __init__(self, iterations: int):
+    """Progression bar."""
+
+    def __init__(self, iterations: int = 80000):
+        """Initialize progression bar.
+
+        Args:
+            iterations: Number of iterations to use (less is faster, but may be worse)
+        """
         self.iterations = iterations
 
     def callback(self, step, **kwargs):
+        """Callback to print progression."""
         print(f"\t{step / self.iterations * 100:.0f}%", file=sys.stderr, end="\r")
 
 
 def seat(options):
+    """Compute optimal seating."""
     if options.players and options.played:
         print(
             "the [played] and [players] arguments cannot be used both", file=sys.stderr
@@ -239,6 +250,7 @@ def seat(options):
 
 
 def format_anomalies(score, code):
+    """Format anomalies."""
     anomalies = getattr(score, code)
     if code in ["R1", "R2", "R4"]:
         return ", ".join(f"{a}-{b}" for a, b in anomalies)
@@ -260,6 +272,7 @@ def format_anomalies(score, code):
 
 
 def partition(anomalies, mean):
+    """Partition anomalies."""
     partitions = collections.defaultdict(list)
     for player, value in anomalies:
         partitions[value].append(player)

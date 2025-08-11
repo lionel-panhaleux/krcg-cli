@@ -2,12 +2,14 @@
 __pycache__/
 build/
 dist/
-venv/
+.venv/
 *.egg-info/
 *.pkl
+uv.lock
 
 # test
 .pytest_cache/
+.mypy_cache/
 .ruff_cache/
 
 # editors & OS
@@ -15,5 +17,5 @@ venv/
 *.DS_Store
 .idea/
 
-# do not commit images
-i18n_cards/
+# secrets
+.pypi_token

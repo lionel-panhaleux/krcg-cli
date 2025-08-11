@@ -1,3 +1,5 @@
+"""Display top cards."""
+
 import sys
 
 from krcg import analyzer
@@ -6,6 +8,7 @@ from . import _utils
 
 
 def add_parser(parser):
+    """Add parser for top subcommand."""
     _utils._init()
     parser = parser.add_parser("top", help="display top cards (most played)")
     parser.add_argument(
@@ -30,6 +33,7 @@ def add_parser(parser):
 
 
 def top(args):
+    """Display top cards."""
     candidates = _utils.filter_cards(args)
     if not candidates:
         sys.stderr.write("No card match\n")
@@ -57,8 +61,8 @@ def top(args):
                 )
             )
         if args.price:
-            if prices.get(card.id):
-                s = f"€{prices[card.id]:>5.2f} " + s
+            if prices.get(card):
+                s = f"€{prices[card]:>5.2f} " + s
             else:
                 s = "  N/A  " + s
         print(s)

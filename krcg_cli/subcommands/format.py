@@ -1,3 +1,5 @@
+"""Format a decklist."""
+
 import argparse
 import json
 import sys
@@ -6,6 +8,7 @@ from krcg import deck
 
 
 def add_parser(parser):
+    """Add parser for format subcommand."""
     parser = parser.add_parser("format", help="format a decklist")
     parser.add_argument(
         "-f",
@@ -26,11 +29,16 @@ def add_parser(parser):
 
 
 def format(args):
+    """Format a decklist."""
     d = None
     try:
         d = deck.Deck.from_txt(args.infile)
     except Exception as e:
-        sys.stderr.write(f"Failed to parse decklist: {e}")
+        print(f"Failed to parse decklist: {e}", file=sys.stderr)
+        return 1
+    if not d:
+        print("Empty or incorrect decklist", file=sys.stderr)
+        return 1
     if args.format == "json":
         json.dump(d.to_json(), sys.stdout, ensure_ascii=False, indent=2)
     else:

@@ -1,3 +1,6 @@
+"""Show TWDA decks."""
+
+from datetime import date as datetime_date
 import sys
 
 from krcg import twda
@@ -8,6 +11,7 @@ from . import _utils
 
 
 def add_parser(parser):
+    """Add parser for deck subcommand."""
     parser = parser.add_parser("deck", help="show TWDA decks")
     _utils.add_twda_filters(parser)
     parser.add_argument(
@@ -23,25 +27,28 @@ def add_parser(parser):
 
 
 def deck(args):
-    _utils._init(with_twda=True)
+    """Show TWDA decks."""
+    # Ensure TWDA is loaded, but avoid needlessly reloading across calls
+    if not twda.TWDA:
+        _utils._init(with_twda=True)
     filters = set(args.filter)
     joined_args = krcg_utils.normalize(" ".join(args.filter))
     deck_ids = [i for i in args.filter if i in twda.TWDA]
     filters -= set(deck_ids)
     cards = [vtes.VTES[c] for c in args.filter if c in vtes.VTES]
     filters -= set(cards)
-    if joined_args in vtes.VTES:
+    if joined_args and joined_args in vtes.VTES:
         cards.append(vtes.VTES[joined_args])
         filters.clear()
     authors = [krcg_utils.normalize(a) for a in args.filter]
     authors = [a for a in authors if a in twda.TWDA.by_author]
     filters -= set(authors)
-    if joined_args in twda.TWDA.by_author:
+    if joined_args and joined_args in twda.TWDA.by_author:
         authors.append(joined_args)
         filters.clear()
     if filters:
         sys.stderr.write(
-            f"\"{' '.join(filters)}\" did not match a deck #, card or author"
+            f'"{" ".join(filters)}" did not match a deck #, card or author'
         )
         return 1
     decks = _utils.filter_twda(args)
@@ -59,7 +66,7 @@ def deck(args):
     if not args.full:
         print(f"-- {len(decks)} decks --")
 
-    for d in sorted(decks, key=lambda a: a.date):
+    for d in sorted(decks, key=lambda a: a.date if a.date else datetime_date.max):
         if args.full:
             print(f"[{d.id:<15}]===================================================")
             print(d.to_txt())

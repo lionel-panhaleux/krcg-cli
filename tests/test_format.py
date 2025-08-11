@@ -1,9 +1,12 @@
+"""Test format subcommand."""
+
 import arrow
 import datetime
 from krcg_cli.parser import execute as cli_execute
 
 
 def test(capsys, tmpdir):
+    """Test format subcommand."""
     file_path = tmpdir + "test-format.txt"
     with file_path.open("w") as f:
         f.write(

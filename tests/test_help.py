@@ -1,7 +1,10 @@
+"""Test help subcommand."""
+
 from krcg_cli.parser import execute as cli_execute
 
 
 def test(capsys):
+    """Test help subcommand."""
     cli_execute([])
     outerr = capsys.readouterr()
     assert outerr.err == ""

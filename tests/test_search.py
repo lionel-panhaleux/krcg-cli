@@ -1,7 +1,10 @@
+"""Test search subcommand."""
+
 from krcg_cli.parser import execute as cli_execute
 
 
 def test(capsys):
+    """Test search subcommand."""
     cli_execute(["search", "--text", "Pentex"])
     outerr = capsys.readouterr()
     assert outerr.err == ""
@@ -36,7 +39,9 @@ Sir Walter Nash
     assert outerr.err == ""
     assert (
         outerr.out
-        == """Imperator
+        == """Camarilla's Iron Fist
+Confiscation
+Imperator
 Karsh (ADV)
 National Guard Support
 Persona Non Grata
@@ -56,6 +61,7 @@ Scourge
         outerr.out
         == """Antonio Veradas
 Bulscu (ADV)
+Camarilla Conclave
 Dark Selina
 Jessica (ADV)
 Joseph Cambridge
@@ -63,17 +69,17 @@ Karen Suadela
 Loki's Gift
 Maila
 Maxwell
-Natasha Volfchek
-... 4 more results, use -n 14 to display them.
+... 5 more results, use -n 15 to display them.
 """
     )
-    cli_execute(["search", "--bonus", "stealth", "votes", "-n", "14"])
+    cli_execute(["search", "--bonus", "stealth", "votes", "-n", "15"])
     outerr = capsys.readouterr()
     assert outerr.err == ""
     assert (
         outerr.out
         == """Antonio Veradas
 Bulscu (ADV)
+Camarilla Conclave
 Dark Selina
 Jessica (ADV)
 Joseph Cambridge

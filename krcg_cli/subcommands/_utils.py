@@ -7,24 +7,43 @@ import itertools
 import json
 import logging
 import math
+from typing import Iterable, Generator, TypeVar
 import sys
 
 import caseconverter
 import unidecode
 
+from krcg import cards
 from krcg import deck
 from krcg import twda
 from krcg import vtes
 
 
-def _init(with_twda=False):
+def _init(with_twda: bool = False, international: bool = False) -> None:
+    """Load krcg data.
+
+    Args:
+        with_twda: Also load TWDA dataset.
+        international: Force loading translations (disable LOCAL_CARDS) and
+            reload cards from VEKN/GitHub sources.
+    """
     try:
+        # If international view is requested, disable LOCAL_CARDS and force reload
+        if international or with_twda:
+            # Disable local mode and ensure a fresh load with translations
+            # cards.LOCAL_CARDS is defined in krcg.cards
+            cards.LOCAL_CARDS = None
+            vtes.VTES.clear()
+
         if not vtes.VTES:
-            vtes.VTES.load()
-            if with_twda:
-                # if TWDA existed but VTES was not loaded, load TWDA anew
-                twda.TWDA.load()
-        if with_twda and not twda.TWDA:
+            # Prefer local CSV (offline) if available via LOCAL_CARDS=1
+            try:
+                vtes.VTES.load_from_vekn()
+            except Exception:
+                # Fallback to network static if local data is not bundled
+                vtes.VTES.load()
+        if with_twda:
+            # Always reload TWDA to ensure consistent state across calls
             twda.TWDA.load()
     except:  # noqa: E722
         sys.stderr.write("Fail to initialize - check your Internet connection.\n")
@@ -32,10 +51,12 @@ def _init(with_twda=False):
 
 
 class CGCParser(html.parser.HTMLParser):
+    """Parse cards prices from https://shop.cardgamegeek.com pages."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.price = None
-        self.in_price = False
+        self.price: int | None = None
+        self.in_price: bool = False
 
     def handle_starttag(self, tag, attrs):
         if self.in_price:
@@ -59,6 +80,7 @@ class CGCParser(html.parser.HTMLParser):
         try:
             data = json.loads(data)
             main_price = data["props"]["pageProps"]["product"]["price"]
+            print(main_price, type(main_price))
             if main_price:
                 self.price = main_price
                 return
@@ -72,51 +94,62 @@ class CGCParser(html.parser.HTMLParser):
 
 
 NAMES_MAP = {
-    "Carlton Van Wyk": "carlton-van-wyk-hunter",
-    "Jake Washington": "jake-washington-hunter",
-    "Pentex™ Subversion": "pentex-subversion",
-    "Kuyén": "kuyen-promo",
-    "CrimethInc.": "crimethinc",
-    "Mylan Horseed": "mylan-horseed-goblin",
-    "Rego Motum": "rego-motus",
-    "Nephandus": "nephandus-mage",
-    "Veneficti": "veneficti-mage",
-    "Wendell Delburton": "wendell-delburton-hunter",
-    "Neighborhood Watch Commander": "neighborhood-watch-commander-hunter",
+    "47th Street Royals": "47th-street-royal",
+    "Akhenaten, The Sun Pharaoh": "akhenaten-the-sun-pharaoh-mummy",
+    "Amam the Devourer": "amam-the-devourer-bane-mummy",
     "Ambrosius, The Ferryman": "ambrosius-the-ferryman-wraith",
+    "Brigitte Gebauer": "brigitte-gebauer-wraith",
+    "Carlton Van Wyk": "carlton-van-wyk-hunter",
+    "CrimethInc.": "crimethinc",
+    "Crusade: Washington, D.C.": "crusade-washington-d-c",
+    "Dauntain Black Magician": "dauntain-black-magician-changeling",
     "Draeven Softfoot": "draeven-softfoot-changeling",
+    "Jake Washington": "jake-washington-hunter",
+    "Kherebutu": "kherebutu-bane-mummy",
+    "Kpist m/45": "kpist-m-45",
+    "Kuyén": "kuyen-promo",
+    "Masquer": "masquer-wraith",
+    "Mehemet of the Ahl-i-Batin": "mehemet-of-the-ahl-i-batin-mage",
+    "Mylan Horseed": "mylan-horseed-goblin",
+    "Neighborhood Watch Commander": "neighborhood-watch-commander-hunter",
+    "Nephandus": "nephandus-mage",
+    "Pentex™ Subversion": "pentex-subversion",
+    "Powerbase: Washington, D.C.": "powerbase-washington-d-c",
+    "Praxis Seizure: Washington, D.C.": "praxis-seizure-washington-d-c",
+    "Rego Motum": "rego-motus",
+    "Sacré-Cœur Cathedral, France": "sacre-cour-cathedral-france",
+    "SchreckNET": "schrecknet",
     "Shadow Court Satyr": "shadow-court-satyr-changeling",
     "Thadius Zho": "thadius-zho-mage",
-    "Amam the Devourer": "amam-the-devourer-bane-mummy",
-    "Sacré-Cœur Cathedral, France": "sacre-cour-cathedral-france",
-    "Akhenaten, The Sun Pharaoh": "akhenaten-the-sun-pharaoh-mummy",
-    "Brigitte Gebauer": "brigitte-gebauer-wraith",
-    "Masquer": "masquer-wraith",
-    "Kherebutu": "kherebutu-bane-mummy",
-    "Mehemet of the Ahl-i-Batin": "mehemet-of-the-ahl-i-batin-mage",
-    "Dauntain Black Magician": "dauntain-black-magician-changeling",
-    "The Meddling of Semsith": "meddling-of-semsith",
-    "The Khabar: Community": "khabar-the-community",
-    "SchreckNET": "schrecknet",
-    "Praxis Seizure: Washington, D.C.": "praxis-seizure-washington-d-c",
-    "Crusade: Washington, D.C.": "crusade-washington-d-c",
-    "Powerbase: Washington, D.C.": "powerbase-washington-d-c",
-    "Sacré-Cœur Cathedral, France": "sacre-cour-cathedral-france",
     "The Crimson Sentinel": "crimson-sentinel",
-    "47th Street Royals": "47th-street-royal",
-    "Kpist m/45": "kpist-m-45",
+    "The Khabar: Community": "khabar-the-community",
+    "The Meddling of Semsith": "meddling-of-semsith",
+    "Veneficti": "veneficti-mage",
+    "Wendell Delburton": "wendell-delburton-hunter",
 }
 
+T = TypeVar("T")
 
-def batched(iterable, n):
-    # py 3.12 function
-    # batched('ABCDEFG', 3) --> ABC DEF G
+
+def batched(iterable: Iterable[T], n: int) -> Generator[Iterable[T], None, None]:
+    """Batch iterable into chunks of size n.
+
+    batched('ABCDEFG', 3) -> 'ABC', 'DEF', 'G'
+    """
     it = iter(iterable)
     while batch := tuple(itertools.islice(it, n)):
         yield batch
 
 
-async def get_cards_price_CGC(card_names, result):
+async def get_cards_price_CGC(cards: Iterable[cards.Card]) -> dict[cards.Card, int]:
+    """Get cards prices from shop.cardgamegeek.com."""
+    result = []
+    card_names = [
+        NAMES_MAP.get(
+            c.usual_name, caseconverter.kebabcase(unidecode.unidecode(c.usual_name))
+        )
+        for c in cards
+    ]
     async with aiohttp.ClientSession() as session:
         for batch in batched(card_names, n=50):
             result.extend(
@@ -124,27 +157,31 @@ async def get_cards_price_CGC(card_names, result):
                     *(
                         get_card_price_CGC(
                             session,
-                            "https://shop.cardgamegeek.com/shop/product/"
-                            + NAMES_MAP.get(
-                                name, caseconverter.kebabcase(unidecode.unidecode(name))
-                            ),
+                            f"https://shop.cardgamegeek.com/shop/product/{name}",
                         )
                         for name in batch
                     ),
                     return_exceptions=True,
                 )
             )
+    return {
+        c: p for c, p in zip(cards, result) if p and not isinstance(p, BaseException)
+    }
 
 
-async def get_card_price_CGC(session: aiohttp.ClientSession, url):
-    async with session.get(url, timeout=30) as response:
+async def get_card_price_CGC(
+    session: aiohttp.ClientSession, url: str
+) -> int | None | BaseException:
+    """Get one card price from shop.cardgamegeek.com."""
+    async with session.get(url, timeout=aiohttp.ClientTimeout(total=30)) as response:
         parser = CGCParser()
         index = await response.text()
         parser.feed(index)
         return parser.price
 
 
-def add_price_option(parser):
+def add_price_option(parser: argparse.ArgumentParser) -> None:
+    """Add --price option to parser."""
     parser.add_argument(
         "--price",
         action="store_true",
@@ -152,15 +189,25 @@ def add_price_option(parser):
     )
 
 
-def get_cards_prices(cards) -> dict[int, str]:
-    prices = []
-    asyncio.run(get_cards_price_CGC([c.usual_name for c in cards], prices))
-    return {c.id: p for c, p in zip(cards, prices) if not isinstance(p, Exception)}
+def get_cards_prices(cards: Iterable[cards.Card]) -> dict[cards.Card, int]:
+    """Get cards prices from shop.cardgamegeek.com."""
+    return asyncio.run(get_cards_price_CGC(cards))
+
+
+def _get_dimension_choices(dimension: str) -> list[str]:
+    """Return available values for a given search dimension.
+
+    Ensures the VTES dataset is loaded before accessing dimensions.
+    """
+    if not vtes.VTES:
+        _init()
+    return vtes.VTES.search_dimensions.get(dimension, [])
 
 
 class NargsChoice(argparse.Action):
-    """Choices with nargs +/*: this is a known issue for argparse
-    cf. https://bugs.python.org/issue9625
+    """Choices with nargs +/*: this is a known issue for argparse.
+
+    cf. https://github.com/python/cpython/issues/53834 - to be fixed in 3.14
     """
 
     CASE_SENSITIVE = False
@@ -168,6 +215,7 @@ class NargsChoice(argparse.Action):
     def get_choices(self): ...
 
     def __call__(self, parser, namespace, values, option_string=None):
+        """Call the action."""
         choices = self.get_choices()
         if not self.CASE_SENSITIVE:
             values = [v.lower() for v in values]
@@ -184,6 +232,7 @@ class NargsChoice(argparse.Action):
 
 
 def add_twda_filters(parser):
+    """Add --from, --to and --players options to parser."""
     parser.add_argument(
         "--from",
         type=lambda s: arrow.get(s).date(),
@@ -204,8 +253,10 @@ def add_twda_filters(parser):
     )
 
 
-def filter_twda(args) -> list[deck.Deck]:
-    _init(with_twda=True)
+def filter_twda(args: argparse.Namespace) -> list[deck.Deck]:
+    """Filter TWDA decks."""
+    if not twda.TWDA:
+        _init(with_twda=True)
     decks = list(twda.TWDA.values())
     if args.date_from:
         decks = [d for d in decks if d.date >= args.date_from]
@@ -217,94 +268,121 @@ def filter_twda(args) -> list[deck.Deck]:
 
 
 class DisciplineChoice(NargsChoice):
+    """Filter by discipline."""
+
     CASE_SENSITIVE = True
 
     @staticmethod
     def get_choices():
-        return vtes.VTES.search_dimensions["discipline"]
+        return _get_dimension_choices("discipline")
 
 
 class ClanChoice(NargsChoice):
+    """Filter by clan."""
+
     @staticmethod
     def get_choices():
-        return vtes.VTES.search_dimensions["clan"]
-
-    # ALIASES = config.CLANS_AKA
+        return _get_dimension_choices("clan")
 
 
 class TypeChoice(NargsChoice):
+    """Filter by type."""
+
     @staticmethod
     def get_choices():
-        return vtes.VTES.search_dimensions["type"]
+        return _get_dimension_choices("type")
 
 
 class TraitChoice(NargsChoice):
+    """Filter by trait."""
+
     @staticmethod
     def get_choices():
-        return vtes.VTES.search_dimensions["trait"]
+        return _get_dimension_choices("trait")
 
 
 class GroupChoice(NargsChoice):
+    """Filter by group."""
+
     @staticmethod
     def get_choices():
-        return vtes.VTES.search_dimensions["group"]
+        return _get_dimension_choices("group")
 
 
 class BonusChoice(NargsChoice):
+    """Filter by bonus."""
+
     @staticmethod
     def get_choices():
-        return vtes.VTES.search_dimensions["bonus"]
+        return _get_dimension_choices("bonus")
 
 
 class CapacityChoice(NargsChoice):
+    """Filter by capacity."""
+
     @staticmethod
     def get_choices():
-        return vtes.VTES.search_dimensions["capacity"]
+        return _get_dimension_choices("capacity")
 
 
 class SectChoice(NargsChoice):
+    """Filter by sect."""
+
     @staticmethod
     def get_choices():
-        return vtes.VTES.search_dimensions["sect"]
+        return _get_dimension_choices("sect")
 
 
 class TitleChoice(NargsChoice):
+    """Filter by title."""
+
     @staticmethod
     def get_choices():
-        return vtes.VTES.search_dimensions["title"]
+        return _get_dimension_choices("title")
 
 
 class CityChoice(NargsChoice):
+    """Filter by city."""
+
     @staticmethod
     def get_choices():
-        return vtes.VTES.search_dimensions["city"]
+        return _get_dimension_choices("city")
 
 
 class SetChoice(NargsChoice):
+    """Filter by set."""
+
     @staticmethod
     def get_choices():
-        return vtes.VTES.search_dimensions["set"]
+        return _get_dimension_choices("set")
 
 
 class RarityChoice(NargsChoice):
+    """Filter by rarity."""
+
     @staticmethod
     def get_choices():
-        return vtes.VTES.search_dimensions["rarity"]
+        return _get_dimension_choices("rarity")
 
 
 class PreconChoice(NargsChoice):
+    """Filter by preconstructed starter."""
+
     @staticmethod
     def get_choices():
-        return vtes.VTES.search_dimensions["precon"]
+        return _get_dimension_choices("precon")
 
 
 class ArtistChoice(NargsChoice):
+    """Filter by artist."""
+
     @staticmethod
     def get_choices():
-        return vtes.VTES.search_dimensions["artist"]
+        return _get_dimension_choices("artist")
 
 
 def add_card_filters(parser):
+    """Add card filters to parser."""
     parser.add_argument(
         "-d",
         "--discipline",
@@ -445,6 +523,7 @@ def add_card_filters(parser):
 
 
 def filter_cards(args):
+    """Filter cards."""
     _init()
     args = {
         k: v
@@ -503,6 +582,7 @@ def filter_cards(args):
 
 
 def typical_copies(A, card, naked=False):
+    """Get typical number of copies of a card in a deck."""
     deviation = math.sqrt(A.variance[card])
     min_copies = max(1, round(A.average[card] - deviation))
     max_copies = max(1, round(A.average[card] + deviation))

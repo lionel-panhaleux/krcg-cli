@@ -1,12 +1,16 @@
+"""Show cards, their text, price on the secondary market, and rulings."""
+
+import argparse
 import sys
 
-from krcg import cards
+from krcg.cards import Card
 from krcg import vtes
 
 from . import _utils
 
 
 def add_parser(parser):
+    """Add parser for card subcommand."""
     parser = parser.add_parser("card", help="show cards")
     parser.add_argument(
         "-i", "--international", action="store_true", help="display translations"
@@ -27,12 +31,12 @@ def add_parser(parser):
 
 
 def card(args):
-    """Display cards, their text and rulings"""
-    _utils._init()
+    """Display cards, their text, price on the secondary market, and rulings."""
+    _utils._init(international=args.international)
     card_names = args.cards
     if not card_names and not sys.stdin.isatty():
-        cards = sys.stdin.read().splitlines()
-    cards = []
+        card_names = sys.stdin.read().splitlines()
+    cards: list[Card] = []
     for index, name in enumerate(card_names):
         try:
             name = int(name)
@@ -52,20 +56,24 @@ def card(args):
     if args.price:
         print("Fetching prices... (it takes a minute)")
         prices = _utils.get_cards_prices(cards)
-    for card in cards:
+    for i, card in enumerate(cards):
+        if i > 0:
+            print()
         _display_card(args, card, prices)
-        print()
 
 
-def _display_card(args, card: cards.Card, prices: dict[int, str] | None = None) -> None:
+def _display_card(
+    args: argparse.Namespace, card: Card, prices: dict[Card, int] | None = None
+) -> None:
+    """Print helper."""
     if args.krcg:
         name_line = f"{card.id}|{card.name}"
     else:
         name_line = card.usual_name
     if args.price:
         prices = prices or _utils.get_cards_prices([card])
-        if prices.get(card.id):
-            name_line = f"€{prices[card.id]:>5.2f} " + name_line
+        if prices.get(card):
+            name_line = f"€{prices[card]:>5.2f} " + name_line
         else:
             name_line = "  N/A  " + name_line
     print(name_line)
@@ -78,13 +86,13 @@ def _display_card(args, card: cards.Card, prices: dict[int, str] | None = None) 
     if args.international:
         for lang, translation in card.i18n_variants("card_text"):
             print(f"\n-- {lang[:2]}\n{translation}")
-    if args.text or not card.rulings.get("text"):
+    if args.text or not card.rulings:
         return
     print(_card_rulings(args, card))
 
 
-def _card_text(args, card) -> str:
-    """Full text of a card (id, title, traits, costs, ...) for display purposes"""
+def _card_text(args: argparse.Namespace, card: Card) -> str:
+    """Full text of a card (id, title, traits, costs, ...) for display purposes."""
     text = "[{}]".format("/".join(card.types))
     if card.clans:
         text += "[{}]".format("/".join(card.clans))
@@ -101,7 +109,7 @@ def _card_text(args, card) -> str:
     if card.burn_option:
         text += "(Burn Option)"
     if card.banned:
-        text += " -- BANNED in " + card["Banned"]
+        text += " -- BANNED on " + card.banned
     if not args.krcg:
         text += " -- (#{})".format(card.id)
     if card.crypt and card.disciplines:
@@ -110,12 +118,18 @@ def _card_text(args, card) -> str:
     return text
 
 
-def _card_rulings(args, card):
-    """Text of a card's rulings"""
+def _card_rulings(args: argparse.Namespace, card: Card) -> str:
+    """Text of a card's rulings."""
     text = "\n-- Rulings\n"
-    for ruling in card.rulings["text"]:
-        text += ruling + "\n"
+    for ruling in card.rulings:
+        text += ruling["text"] + "\n"
     if args.links:
-        for ref, link in card.rulings["links"].items():
-            text += f"{ref}: {link}\n"
+        seen = set()
+        text += "\n-- Rulings references\n"
+        for ruling in card.rulings:
+            for ref in ruling["references"]:
+                if ref["label"] in seen:
+                    continue
+                seen.add(ref["label"])
+                text += f"{ref['label']}: {ref['url']}\n"
     return text[:-1]

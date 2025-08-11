@@ -1,3 +1,5 @@
+"""Parser for the CLI."""
+
 import argparse
 
 from .subcommands import affinity
@@ -29,6 +31,7 @@ twd.add_parser(subparsers)
 
 
 def execute(args):
+    """Execute the CLI."""
     args = parser.parse_args(args)
     if not args.subcommand:
         parser.print_help()

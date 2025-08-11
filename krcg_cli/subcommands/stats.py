@@ -1,16 +1,20 @@
+"""Compute stats on a deck archive."""
+
 import collections
 import functools
 import pathlib
 import re
-from typing import Iterable
+from typing import Iterable, TypeVar
 
 from krcg import analyzer
 from krcg import deck
+from krcg import cards
 
 from . import _utils
 
 
 def add_parser(parser):
+    """Add parser for stats subcommand."""
     parser = parser.add_parser("stats", help="compute stats on a deck archive")
     parser.add_argument(
         "-f",
@@ -114,38 +118,54 @@ FILTERS.update(CLANS)
 
 @functools.total_ordering
 class Score:
+    """Score."""
+
     def __init__(self, **kwargs):
+        """Initialize score."""
         self.gw: int = int(kwargs.get("gw", 0))
         self.vp: float = float(kwargs.get("vp", 0))
 
     def __eq__(self, rhs):
+        """Compare scores."""
         return (self.gw, self.vp) == (rhs.gw, rhs.vp)
 
     def __lt__(self, rhs):
+        """Compare scores."""
         return (self.gw, self.vp) < (rhs.gw, rhs.vp)
 
     def __str__(self):
+        """String representation."""
         return f"{self.gw}GW{self.vp}"
 
     def __add__(self, rhs):
+        """Add scores."""
         return self.__class__(gw=self.gw + rhs.gw, vp=self.vp + rhs.vp)
 
     def __iadd__(self, rhs):
+        """Add scores."""
         self.gw += rhs.gw
         self.vp += rhs.vp
         return self
 
 
-def ranking(it: Iterable):
-    rank, last_score = 0, None
+T = TypeVar("T", bound=int | float | Score)
+
+
+def ranking(
+    it: Iterable[tuple[cards.Card, T]],
+) -> Iterable[tuple[int, cards.Card, T]]:
+    """Ranking."""
+    rank: int = 0
+    last_score: T | None = None
     for i, (c, score) in enumerate(it, 1):
-        if not last_score or score < last_score:
+        if not last_score or score < last_score:  # type: ignore
             rank = i
             last_score = score
         yield rank, c, score
 
 
-def trend(upheaval_score):
+def trend(upheaval_score: int) -> str:
+    """Trend for the card score."""
     if upheaval_score > 20:
         return "↑"
     if upheaval_score < -60:
@@ -154,6 +174,7 @@ def trend(upheaval_score):
 
 
 def stats(args):
+    """Compute stats on a deck archive."""
     if args.folder:
         _utils._init(with_twda=False)
         decks = [deck.Deck.from_txt(f.open()) for f in args.folder.glob("*.txt")]
@@ -165,7 +186,7 @@ def stats(args):
     most_common = A.played.most_common()
     for dek in decks:
         if dek.score:
-            dek.score = Score(
+            dek.score = Score(  # type: ignore
                 gw=int(dek.score.game_wins or 0),
                 vp=float(dek.score.round_vps or 0) + float(dek.score.finals_vps or 0),
             )
@@ -176,13 +197,13 @@ def stats(args):
             re.MULTILINE,
         )
         if match:
-            dek.score = Score(
+            dek.score = Score(  # type: ignore
                 gw=int(match.group("gw")),
                 vp=int(match.group("vp")) + int(match.group("vp_frac") or 0) / 10,
             )
         else:
-            dek.score = Score()
-    cards_score = collections.defaultdict(Score)
+            dek.score = Score()  # type: ignore
+    cards_score: dict[cards.Card, Score] = collections.defaultdict(Score)
     for dek in decks:
         for card, _ in dek.cards():
             cards_score[card] += dek.score
@@ -200,7 +221,7 @@ def stats(args):
     score_rank = {c: r for r, c, _score in ranking(cards_score_list)}
     cards_norm_score = dict(cards_norm_score_list)
     upheaval = {k: v - score_rank[k] for k, v in played_rank.items()}
-    average_score = sum(d.score.vp for d in decks) / len(decks)
+    average_score = sum(d.score.vp for d in decks) / len(decks)  # type: ignore
     cards_diff_score = {
         card: round((score - average_score) * A.played[card], 2)
         for card, score in cards_norm_score.items()
@@ -208,8 +229,11 @@ def stats(args):
     print()
     print(f"AVERAGE METASCORE: {round(average_score, 2)}")
     print()
-    print("=============== Rankings ===============")
+    print("  Format: <rank>. <trend> <played> <score> (<norm>) [<diff>] <card name>")
+    print("     - norm: vps / decks_having_it                  # use to compare cards")
+    print("     - diff: (vps - average_vps) * decks_having_it  # how far from average")
     print()
+    print("=============== Rankings ===============")
     print("------------ Played ------------")
     for r, c, count in ranking(most_common):
         print(
@@ -256,17 +280,17 @@ def stats(args):
         print()
         print("=============== Diff to AVG ===============")
         print()
-        upheaval_list = sorted(
+        diff_upheaval_list = sorted(
             cards_diff_score.items(),
             key=lambda a: a[1],
             reverse=True,
         )
         print("------------ Overperforming ------------")
-        for i, (card, dif) in enumerate(upheaval_list):
-            if dif < 6:
+        for i, (card, dif_float) in enumerate(diff_upheaval_list):
+            if dif_float < 6:
                 break
             print(
-                f"{i}. {card} got {dif} more VPs than average ({A.played[card]}: "
+                f"{i}. {card} got {dif_float} more VPs than average ({A.played[card]}: "
                 f"{cards_norm_score[card]})"
             )
 
@@ -318,7 +342,7 @@ def stats(args):
     for p, name in proportions:
         if p < 0.005:
             break
-        print(f"- {round(p*100)}% {name}")
+        print(f"- {round(p * 100)}% {name}")
     print()
     print("------------ Clans ------------")
     proportions = sorted(
@@ -335,5 +359,5 @@ def stats(args):
     for p, name in proportions:
         if p < 0.005:
             break
-        print(f"- {round(p*100)}% {name}")
+        print(f"- {round(p * 100)}% {name}")
     print()

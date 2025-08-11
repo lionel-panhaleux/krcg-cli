@@ -1,7 +1,10 @@
+"""Test deck subcommand."""
+
 from krcg_cli.parser import execute as cli_execute
 
 
 def test(capsys):
+    """Test deck subcommand."""
     cli_execute(["deck", "foobar"])
     outerr = capsys.readouterr()
     assert outerr.err == '"foobar" did not match a deck #, card or author'

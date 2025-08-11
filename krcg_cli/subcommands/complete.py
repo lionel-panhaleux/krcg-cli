@@ -1,3 +1,5 @@
+"""Card name completion."""
+
 import sys
 
 from krcg import vtes
@@ -6,6 +8,7 @@ from . import _utils
 
 
 def add_parser(parser):
+    """Add parser for complete subcommand."""
     parser = parser.add_parser("complete", help="card name completion")
     parser.add_argument("-f", "--full", action="store_true", help="display cards text")
     parser.add_argument("name", metavar="NAME", help="parts of the name")
@@ -13,6 +16,7 @@ def add_parser(parser):
 
 
 def complete(args):
+    """Card name completion."""
     _utils._init()
     completions = vtes.VTES.complete(args.name)
     if not completions:

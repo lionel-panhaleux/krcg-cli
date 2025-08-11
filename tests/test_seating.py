@@ -1,9 +1,11 @@
+"""Test seating subcommand."""
+
 import tempfile
 from krcg_cli.parser import execute as cli_execute
 
 
-def local_execute(line: str):
-    """For whatever reason, capsys is really struggling to get it right here"""
+def local_execute(line: str) -> str:
+    """For whatever reason, capsys is really struggling to get it right here."""
     args = line.split()
     tmp = tempfile.NamedTemporaryFile("r")
     args.insert(1, "-o")
@@ -15,6 +17,7 @@ def local_execute(line: str):
 
 
 def test_base():
+    """Test base usage."""
     #
     # Base usage, defaults to 3 rounds
     #
@@ -45,6 +48,7 @@ def test_base():
 
 
 def test_add_remove(capsys):
+    """Test adding and removing players."""
     #
     # Adding and removing players after first round have been played
     #
@@ -105,8 +109,9 @@ def test_add_remove(capsys):
 
 
 def test_simple_scoring():
+    """Test simple scoring."""
     result = local_execute(
-        "seating -vi 0 -p " "1,2,3,4,5,6,7,8,9 2,5,7,1,8,9,4,6,3 4,1,9,7,2,8,3,5,6"
+        "seating -vi 0 -p 1,2,3,4,5,6,7,8,9 2,5,7,1,8,9,4,6,3 4,1,9,7,2,8,3,5,6"
     )
     assert result == (
         "1,2,3,4,5,6,7,8,9\n"
