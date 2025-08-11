@@ -28,8 +28,9 @@ pip install krcg-cli
 
 ## Usage
 
-An internet connection is required to initialize krcg with official VEKN data
-(cards list and TWDA):
+By default, krcg-cli uses bundled offline card and rulings data when available.
+Some features (translations with `--international` or TWDA refresh) require
+an internet connection.
 
 Use the help command for a full documentation of the tool:
 
@@ -42,6 +43,39 @@ And also extensive help on each sub-command:
 ```bash
 krcg [COMMAND] --help
 ```
+
+Available subcommands:
+
+- card: show cards
+- complete: card name completion
+- search: search card
+- deck: show TWDA decks
+- top: display top cards (most played)
+- affinity: display cards affinity (most played together)
+- build: build a deck around given card(s), based on the TWDA
+- format: format a decklist
+- seating: compute optimal seating
+- stats: compute stats on a deck archive
+- twd: display TWD statistics
+
+Common filters and options:
+
+- TWDA filters (where applicable: deck, top, affinity, build, stats, twd):
+  - `--from YYYY[-MM[-DD]]`: only consider decks from that date
+  - `--to   YYYY[-MM[-DD]]`: only consider decks up to that date
+  - `--players N`: only consider tournaments with at least N players
+- Card filters (used by search/top):
+  - `-d/--discipline`, `-c/--clan`, `-t/--type`, `-g/--group`,
+    `-x/--exclude-set`, `-e/--exclude-type`, `-b/--bonus`, `--text ...`,
+    `--trait`, `--capacity`, `--set`, `--sect`, `--title`, `--city`,
+    `--rarity`, `--precon`, `--artist`, `--no-reprint`
+- Output/format helpers:
+  - `card`: `--international`, `--short`, `--text`, `--links`, `--krcg`, `--price`
+  - `top`: `-n/--number`, `--output [human|csv]`, `--price`
+  - `deck`: `-f/--full` to always display full deck content
+  - `format`: `-f/--format [jol|twd|lackey|json]` (reads stdin if no file)
+  - `seating`: `--archon` (tab-separated, Archon-compatible), `-o FILE`,
+    `-r/--rounds`, `-i/--iterations`, `-v/--verbose`
 
 ## Contribute
 
@@ -74,7 +108,7 @@ Weapon: gun.
 Strike: 2R damage, with 1 optional maneuver each combat.
 
 -- Rulings
-Provides only ony maneuver each combat, even if the bearer changes. [LSJ 19980302-2]
+Provides only one maneuver each combat, even if the bearer changes. [LSJ 19980302-2]
 The optional maneuver cannot be used if the strike cannot be used (eg. {Hidden Lurker}). [LSJ 20021028]
 ```
 
@@ -88,10 +122,26 @@ Weapon: gun.
 Strike: 2R damage, with 1 optional maneuver each combat.
 
 -- Rulings
-Provides only ony maneuver each combat, even if the bearer changes. [LSJ 19980302-2]
+Provides only one maneuver each combat, even if the bearer changes. [LSJ 19980302-2]
 The optional maneuver cannot be used if the strike cannot be used (eg. {Hidden Lurker}). [LSJ 20021028]
 [LSJ 19980302-2]: https://groups.google.com/d/msg/rec.games.trading-cards.jyhad/9YVFkeiL3Js/4UZXMyicluwJ
 [LSJ 20021028]: https://groups.google.com/g/rec.games.trading-cards.jyhad/c/g0GGiVIxyis/m/35WA-O9XrroJ
+```
+
+Other useful flags for cards:
+
+```bash
+# Translations alongside English text
+$ krcg card --international ".44 Magnum"
+
+# Only the card name (useful when piping)
+$ krcg card --short Alastor
+
+# Only the card rules text, without rulings
+$ krcg card --text Alastor
+
+# KRCG export format (id|name) and price information
+$ krcg card --krcg --price Alastor
 ```
 
 Search for cards matching a number of criteria
@@ -103,6 +153,9 @@ Ministry
 Truth in Ink
 Watch Commander
 ```
+
+Tip: use `-n/--number` to control how many results are printed, and
+`--no-reprint`, `--exclude-type`, or `--exclude-set` to refine the pool.
 
 Search for specific card text
 
@@ -150,6 +203,17 @@ Ambush
 Ana Rita Montaña
 Animal Magnetism
 ...
+```
+
+Autocomplete a card name
+
+```bash
+$ krcg complete Pentex
+Pentex™ Loves You!
+Pentex™ Subversion
+Enzo Giovanni, Pentex Board of Directors
+Enzo Giovanni, Pentex Board of Directors (ADV)
+Harold Zettler, Pentex Director
 ```
 
 List TWDA decks containing a card:
@@ -354,6 +418,7 @@ Format a decklist into another format - also note that krcg commands can be pipe
 
 ```bash
 krcg deck 2016gncbg | krcg format -f lackey > 2016gncbg.txt
+# Supported formats: jol, twd, lackey, json
 ```
 
 Compute an optimal tournament seating
@@ -403,3 +468,26 @@ R9   0.00  OK (position group)
 ```
 
 Note that removed and added players are not considered in vps and transfers rules (R3, R8)
+
+For tournament management:
+
+- Use `--archon` to output tab-separated, Archon-compatible seating (empty 5th seat in 4-player tables).
+- Use `-o FILE` to append results to a file.
+
+Other commands:
+
+- TWD statistics
+
+  ```bash
+  $ krcg twd --from 2012 --to 2013
+  # per-year breakdown of clans and disciplines
+  ```
+
+- Deck archive statistics (folder of decklists or TWDA)
+
+  ```bash
+  # On a local folder of .txt decklists
+  $ krcg stats -f ./my-decks
+  # Or on TWDA with filters
+  $ krcg stats --from 2023
+  ```
