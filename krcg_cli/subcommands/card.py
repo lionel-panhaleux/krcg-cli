@@ -3,8 +3,8 @@
 import argparse
 import sys
 
-from krcg.cards import Card
-from krcg import vtes
+from krcg import models
+from krcg.models import Card, CryptCard, LibraryCard
 
 from . import _utils
 
@@ -43,11 +43,11 @@ def card(args):
         except ValueError:
             pass
         try:
-            cards.append(vtes.VTES[name])
+            cards.append(_utils.VTES[name])
         except KeyError:
             if index == 0:
                 try:
-                    cards.append(vtes.VTES[" ".join(card_names)])
+                    cards.append(_utils.VTES[" ".join(card_names)])
                     break
                 except KeyError:
                     sys.stderr.write(f"Card not found: {name}")
@@ -67,9 +67,9 @@ def _display_card(
 ) -> None:
     """Print helper."""
     if args.krcg:
-        name_line = f"{card.id}|{card.name}"
+        name_line = f"{card.id}|{card.unique_name}"
     else:
-        name_line = card.usual_name
+        name_line = card.unique_name
     if args.price:
         prices = prices or _utils.get_cards_prices([card])
         if prices.get(card):
@@ -78,43 +78,54 @@ def _display_card(
             name_line = "  N/A  " + name_line
     print(name_line)
     if args.international:
-        for lang, translation in card.i18n_variants("name"):
-            print(f"  {lang[:2]} -- {translation}")
+        for lang in models.Lang:
+            if lang != models.Lang.EN and lang in card.i18n:
+                print(f"  {lang.value[:2]} -- {card.i18n[lang].name}")
     if args.short:
         return
     print(_card_text(args, card))
     if args.international:
-        for lang, translation in card.i18n_variants("card_text"):
-            print(f"\n-- {lang[:2]}\n{translation}")
+        for lang in models.Lang:
+            if lang != models.Lang.EN and lang in card.i18n:
+                print(f"\n-- {lang.value[:2]}\n{card.i18n[lang].text}")
     if args.text or not card.rulings:
         return
     print(_card_rulings(args, card))
 
 
+_COST_SUFFIX = {
+    models.Cost.Type.POOL: "P",
+    models.Cost.Type.BLOOD: "B",
+    models.Cost.Type.CONVICTION: "C",
+}
+
+
 def _card_text(args: argparse.Namespace, card: Card) -> str:
     """Full text of a card (id, title, traits, costs, ...) for display purposes."""
-    text = "[{}]".format("/".join(card.types))
-    if card.clans:
-        text += "[{}]".format("/".join(card.clans))
-    if card.pool_cost:
-        text += "[{}P]".format(card.pool_cost)
-    if card.blood_cost:
-        text += "[{}B]".format(card.blood_cost)
-    if card.conviction_cost:
-        text += "[{}C]".format(card.conviction_cost)
-    if card.capacity:
+    text = "[{}]".format("/".join(t.value for t in card.types))
+    if isinstance(card, CryptCard):
+        clans = [card.clan] if card.clan else []
+    elif isinstance(card, LibraryCard):
+        clans = card.clan_requirement
+    else:
+        clans = []
+    if clans:
+        text += "[{}]".format("/".join(clans))
+    if isinstance(card, LibraryCard) and card.cost:
+        text += "[{}{}]".format(card.cost.value, _COST_SUFFIX[card.cost.type])
+    if isinstance(card, CryptCard) and card.capacity:
         text += "[{}]".format(card.capacity)
-    if not args.krcg and card.group:
-        text += "(g.{})".format(card.group)
-    if card.burn_option:
+    if not args.krcg and isinstance(card, CryptCard) and card.group:
+        text += "(g.{})".format(card.group.value[1:])
+    if isinstance(card, LibraryCard) and card.burn_option:
         text += "(Burn Option)"
     if card.banned:
-        text += " -- BANNED on " + card.banned
+        text += " -- BANNED on " + str(card.banned)
     if not args.krcg:
         text += " -- (#{})".format(card.id)
-    if card.crypt and card.disciplines:
+    if isinstance(card, CryptCard) and card.disciplines:
         text += "\n{}".format(" ".join(card.disciplines) or "-- No discipline")
-    text += "\n{}".format(card.card_text)
+    text += "\n{}".format(card.text)
     return text
 
 
@@ -122,14 +133,14 @@ def _card_rulings(args: argparse.Namespace, card: Card) -> str:
     """Text of a card's rulings."""
     text = "\n-- Rulings\n"
     for ruling in card.rulings:
-        text += ruling["text"] + "\n"
+        text += ruling.text + "\n"
     if args.links:
         seen = set()
         text += "\n-- Rulings references\n"
         for ruling in card.rulings:
-            for ref in ruling["references"]:
-                if ref["label"] in seen:
+            for ref in ruling.references:
+                if ref.label in seen:
                     continue
-                seen.add(ref["label"])
-                text += f"{ref['label']}: {ref['url']}\n"
+                seen.add(ref.label)
+                text += f"{ref.label}: {ref.url}\n"
     return text[:-1]

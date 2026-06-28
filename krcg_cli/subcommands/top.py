@@ -1,5 +1,6 @@
 """Display top cards."""
 
+import collections
 import sys
 
 from krcg import analyzer
@@ -39,25 +40,26 @@ def top(args):
         sys.stderr.write("No card match\n")
         return 1
     decks = _utils.filter_twda(args)
-    A = analyzer.Analyzer(decks)
-    A.refresh(condition=lambda c: c in candidates)
+    played = analyzer.played(decks, _utils.VTES)
+    played = collections.Counter({c: n for c, n in played.items() if c in candidates})
+    stats = analyzer.stats(decks, _utils.VTES)
     if args.output == "csv":
         print(",".join(("Card name", "# decks", "# copies")))
-    cards = list(A.played.most_common()[: args.number])
+    cards = list(played.most_common()[: args.number])
     if args.price:
         prices = _utils.get_cards_prices([c for c, _n in cards])
     for card, count in cards:
         if args.output == "human":
             s = (
-                f"{card.usual_name:<30} (played in {count} decks, typically "
-                f"{_utils.typical_copies(A, card)})"
+                f"{card.unique_name:<30} (played in {count} decks, typically "
+                f"{_utils.typical_copies(stats, card)})"
             )
         elif args.output == "csv":
             s = ",".join(
                 (
-                    f'"{card.usual_name}"',
+                    f'"{card.unique_name}"',
                     str(count),
-                    _utils.typical_copies(A, card, naked=True),
+                    _utils.typical_copies(stats, card, naked=True),
                 )
             )
         if args.price:

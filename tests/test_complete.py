@@ -10,8 +10,8 @@ def test(capsys):
     assert outerr.err == ""
     assert (
         outerr.out
-        == """Pentex™ Loves You!
-Pentex™ Subversion
+        == """Pentex™ Subversion
+Pentex™ Loves You!
 Enzo Giovanni, Pentex Board of Directors
 Enzo Giovanni, Pentex Board of Directors (ADV)
 Harold Zettler, Pentex Director

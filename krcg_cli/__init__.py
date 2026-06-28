@@ -2,12 +2,7 @@
 """VTES tool."""
 
 import logging
-import os
 import sys
-
-# Prefer offline local CSV/rulings from the `cards` package by default.
-# Users can override by exporting LOCAL_CARDS="0".
-os.environ.setdefault("LOCAL_CARDS", "1")
 
 from . import parser
 

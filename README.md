@@ -2,7 +2,7 @@
 
 [![PyPI version](https://badge.fury.io/py/krcg-cli.svg)](https://badge.fury.io/py/krcg-cli)
 [![Validation](https://github.com/lionel-panhaleux/krcg-cli/actions/workflows/validation.yml/badge.svg)](https://github.com/lionel-panhaleux/krcg-cli/actions/workflows/validation.yml)
-[![Python version](https://img.shields.io/badge/python-3.11-blue)](https://www.python.org/downloads/)
+[![Python version](https://img.shields.io/badge/python-3.13-blue)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/License-MIT-blue)](https://opensource.org/licenses/MIT)
 [![Code Style](https://img.shields.io/badge/code%20style-black-black)](https://github.com/psf/black)
 
@@ -28,9 +28,8 @@ pip install krcg-cli
 
 ## Usage
 
-By default, krcg-cli uses bundled offline card and rulings data when available.
-Some features (translations with `--international` or TWDA refresh) require
-an internet connection.
+krcg-cli uses the card, ruling, and TWDA data bundled with the `krcg` library
+(including translations), so it works fully offline.
 
 Use the help command for a full documentation of the tool:
 

@@ -3,7 +3,7 @@
 import sys
 
 from krcg import analyzer
-from krcg import vtes
+from krcg import providers
 
 from . import _utils
 
@@ -22,9 +22,10 @@ def build(args):
     """Build a deck around given card(s), based on the TWDA."""
     decks = _utils.filter_twda(args)
     try:
-        cards = [vtes.VTES[name] for name in args.cards]
+        cards = [_utils.VTES[name] for name in args.cards]
     except KeyError as e:
         sys.stderr.write(f"Card not found: {e.args[0]}\n")
         return 1
-    print(analyzer.Analyzer(decks).build_deck(*cards).to_txt())
+    deck = analyzer.build_deck(decks, _utils.VTES, *cards)
+    print(providers.serialize_twd(deck, _utils.VTES))
     return 0

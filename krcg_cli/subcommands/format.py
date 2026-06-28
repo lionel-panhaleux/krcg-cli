@@ -1,10 +1,12 @@
 """Format a decklist."""
 
-import argparse
 import json
 import sys
 
-from krcg import deck
+from krcg import parser as krcg_parser
+from krcg import providers
+
+from . import _utils
 
 
 def add_parser(parser):
@@ -21,8 +23,7 @@ def add_parser(parser):
     parser.add_argument(
         "infile",
         nargs="?",
-        type=argparse.FileType("r"),
-        default=sys.stdin,
+        metavar="FILE",
         help="Input file. If not provided, read from standard input (stdin)",
     )
     parser.set_defaults(func=format)
@@ -30,16 +31,34 @@ def add_parser(parser):
 
 def format(args):
     """Format a decklist."""
+    _utils._init()
     d = None
     try:
-        d = deck.Deck.from_txt(args.infile)
+        if args.infile:
+            with open(args.infile) as infile:
+                d = krcg_parser.deck_from_txt(infile, _utils.VTES)
+        else:
+            d = krcg_parser.deck_from_txt(sys.stdin, _utils.VTES)
+    except OSError as e:
+        print(f"Failed to open decklist: {e}", file=sys.stderr)
+        return 1
     except Exception as e:
         print(f"Failed to parse decklist: {e}", file=sys.stderr)
         return 1
-    if not d:
+    if not d or not d.cards:
         print("Empty or incorrect decklist", file=sys.stderr)
         return 1
     if args.format == "json":
-        json.dump(d.to_json(), sys.stdout, ensure_ascii=False, indent=2)
-    else:
-        print(d.to_txt(format=args.format))
+        json.dump(
+            providers.serialize_json_minimal(d),
+            sys.stdout,
+            ensure_ascii=False,
+            indent=2,
+        )
+    elif args.format == "twd":
+        print(providers.serialize_twd(d, _utils.VTES))
+    elif args.format == "lackey":
+        print(providers.serialize_lackey(d))
+    elif args.format == "jol":
+        print(providers.serialize_jol(d))
+    return 0

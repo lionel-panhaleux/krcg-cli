@@ -41,7 +41,6 @@ Sir Walter Nash
         outerr.out
         == """Camarilla's Iron Fist
 Confiscation
-Imperator
 Karsh (ADV)
 National Guard Support
 Persona Non Grata
@@ -54,22 +53,15 @@ Scourge
     outerr = capsys.readouterr()
     assert outerr.err == ""
     assert outerr.out == "Amenophobis\n"
+    # --bonus is an intersection filter in krcg v5: cards with both stealth and votes
     cli_execute(["search", "--bonus", "stealth", "votes"])
     outerr = capsys.readouterr()
     assert outerr.err == ""
     assert (
         outerr.out
-        == """Antonio Veradas
-Bulscu (ADV)
-Camarilla Conclave
-Dark Selina
-Jessica (ADV)
-Joseph Cambridge
-Karen Suadela
+        == """Camarilla Conclave
 Loki's Gift
-Maila
-Maxwell
-... 5 more results, use -n 15 to display them.
+Perfect Paragon
 """
     )
     cli_execute(["search", "--bonus", "stealth", "votes", "-n", "15"])
@@ -77,20 +69,8 @@ Maxwell
     assert outerr.err == ""
     assert (
         outerr.out
-        == """Antonio Veradas
-Bulscu (ADV)
-Camarilla Conclave
-Dark Selina
-Jessica (ADV)
-Joseph Cambridge
-Karen Suadela
+        == """Camarilla Conclave
 Loki's Gift
-Maila
-Maxwell
-Natasha Volfchek
 Perfect Paragon
-Sela (ADV)
-Suhailah
-Zayyat, The Sandstorm
 """
     )

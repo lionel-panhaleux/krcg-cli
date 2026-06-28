@@ -11,41 +11,36 @@ from typing import Iterable, Generator, TypeVar
 import sys
 
 import caseconverter
+import datetime
 import unidecode
 
-from krcg import cards
-from krcg import deck
-from krcg import twda
-from krcg import vtes
+from krcg import loader
+from krcg import models
+from krcg import twda as krcg_twda
+from krcg.collections import CardDict
+from krcg.models import Card, CryptCard, Deck, LibraryCard
+
+#: The cards library, loaded lazily by `_init`.
+VTES: CardDict = CardDict()
+#: The Tournament Winning Decks Archive, loaded lazily by `_init(with_twda=True)`.
+TWDA: dict[str, Deck] = {}
 
 
 def _init(with_twda: bool = False, international: bool = False) -> None:
     """Load krcg data.
 
     Args:
-        with_twda: Also load TWDA dataset.
-        international: Force loading translations (disable LOCAL_CARDS) and
-            reload cards from VEKN/GitHub sources.
+        with_twda: Also load the TWDA dataset.
+        international: Kept for backwards compatibility; the bundled data always
+            ships translations, so it no longer changes how data is loaded.
     """
+    global VTES, TWDA
     try:
-        # If international view is requested, disable LOCAL_CARDS and force reload
-        if international or with_twda:
-            # Disable local mode and ensure a fresh load with translations
-            # cards.LOCAL_CARDS is defined in krcg.cards
-            cards.LOCAL_CARDS = None
-            vtes.VTES.clear()
-
-        if not vtes.VTES:
-            # Prefer local CSV (offline) if available via LOCAL_CARDS=1
-            try:
-                vtes.VTES.load_from_vekn()
-            except Exception:
-                # Fallback to network static if local data is not bundled
-                vtes.VTES.load()
-        if with_twda:
-            # Always reload TWDA to ensure consistent state across calls
-            twda.TWDA.load()
-    except:  # noqa: E722
+        if not VTES:
+            VTES = loader.load()
+        if with_twda and not TWDA:
+            TWDA = krcg_twda.load()
+    except Exception:
         sys.stderr.write("Fail to initialize - check your Internet connection.\n")
         raise
 
@@ -141,12 +136,12 @@ def batched(iterable: Iterable[T], n: int) -> Generator[Iterable[T], None, None]
         yield batch
 
 
-async def get_cards_price_CGC(cards: Iterable[cards.Card]) -> dict[cards.Card, int]:
+async def get_cards_price_CGC(cards: Iterable[Card]) -> dict[Card, int]:
     """Get cards prices from shop.cardgamegeek.com."""
     result = []
     card_names = [
         NAMES_MAP.get(
-            c.usual_name, caseconverter.kebabcase(unidecode.unidecode(c.usual_name))
+            c.unique_name, caseconverter.kebabcase(unidecode.unidecode(c.unique_name))
         )
         for c in cards
     ]
@@ -189,9 +184,58 @@ def add_price_option(parser: argparse.ArgumentParser) -> None:
     )
 
 
-def get_cards_prices(cards: Iterable[cards.Card]) -> dict[cards.Card, int]:
+def get_cards_prices(cards: Iterable[Card]) -> dict[Card, int]:
     """Get cards prices from shop.cardgamegeek.com."""
     return asyncio.run(get_cards_price_CGC(cards))
+
+
+def card_in_deck(card: Card, deck: Deck) -> bool:
+    """Whether the given card is played in the deck (any count)."""
+    return any(entry.id == card.id for entry in deck.cards)
+
+
+def deck_date(deck: Deck) -> datetime.date | None:
+    """The deck's tournament date, or None if unknown."""
+    return deck.event.date if deck.event else None
+
+
+def deck_cards(deck: Deck, condition=None) -> Generator[tuple[Card, int], None, None]:
+    """Yield (resolved card, count) for each deck entry matching the condition."""
+    for entry in deck.cards:
+        card = VTES.get(entry.id)
+        if card is None:
+            continue
+        if condition and not condition(card):
+            continue
+        yield card, entry.count
+
+
+def is_crypt(card: Card) -> bool:
+    """Whether the card is a crypt card."""
+    return card.kind == models.Card.Kind.CRYPT
+
+
+def is_library(card: Card) -> bool:
+    """Whether the card is a library card."""
+    return card.kind == models.Card.Kind.LIBRARY
+
+
+def card_clans(card: Card) -> list[str]:
+    """The clans of a card (crypt clan, or library clan requirement)."""
+    if isinstance(card, CryptCard):
+        return [card.clan] if card.clan else []
+    if isinstance(card, LibraryCard):
+        return card.clan_requirement
+    return []
+
+
+def card_disciplines(card: Card) -> list[str]:
+    """The disciplines of a card (crypt disciplines, or library requirement)."""
+    if isinstance(card, CryptCard):
+        return card.disciplines
+    if isinstance(card, LibraryCard) and card.discipline_requirement:
+        return card.discipline_requirement.disciplines
+    return []
 
 
 def _get_dimension_choices(dimension: str) -> list[str]:
@@ -199,9 +243,9 @@ def _get_dimension_choices(dimension: str) -> list[str]:
 
     Ensures the VTES dataset is loaded before accessing dimensions.
     """
-    if not vtes.VTES:
+    if not VTES:
         _init()
-    return vtes.VTES.search_dimensions.get(dimension, [])
+    return [v for v in VTES.search_dimensions.get(dimension, []) if v is not None]
 
 
 class NargsChoice(argparse.Action):
@@ -212,23 +256,32 @@ class NargsChoice(argparse.Action):
 
     CASE_SENSITIVE = False
 
-    def get_choices(self): ...
+    @staticmethod
+    def get_choices() -> list[str]:
+        return []
 
     def __call__(self, parser, namespace, values, option_string=None):
-        """Call the action."""
+        """Call the action.
+
+        Validates each value against the dimension choices and stores the
+        canonical (correctly-cased) choice, as v5 indexes are case-sensitive.
+        """
         choices = self.get_choices()
-        if not self.CASE_SENSITIVE:
-            values = [v.lower() for v in values]
-            choices = {c.lower() for c in choices}
-        if values:
-            for value in values:
-                if value not in choices:
-                    raise argparse.ArgumentError(
-                        self,
-                        f"invalid choice: {value} (choose from: "
-                        f"{', '.join(self.get_choices())})",
-                    )
-        setattr(namespace, self.dest, values)
+        if self.CASE_SENSITIVE:
+            canonical = {c: c for c in choices}
+        else:
+            canonical = {c.lower(): c for c in choices}
+        result = []
+        for value in values or []:
+            key = value if self.CASE_SENSITIVE else value.lower()
+            if key not in canonical:
+                raise argparse.ArgumentError(
+                    self,
+                    f"invalid choice: {value} (choose from: "
+                    f"{', '.join(self.get_choices())})",
+                )
+            result.append(canonical[key])
+        setattr(namespace, self.dest, result)
 
 
 def add_twda_filters(parser):
@@ -253,17 +306,25 @@ def add_twda_filters(parser):
     )
 
 
-def filter_twda(args: argparse.Namespace) -> list[deck.Deck]:
+def filter_twda(args: argparse.Namespace) -> list[Deck]:
     """Filter TWDA decks."""
-    if not twda.TWDA:
+    if not TWDA:
         _init(with_twda=True)
-    decks = list(twda.TWDA.values())
+    decks = list(TWDA.values())
     if args.date_from:
-        decks = [d for d in decks if d.date >= args.date_from]
+        decks = [
+            d
+            for d in decks
+            if d.event and d.event.date and d.event.date >= args.date_from
+        ]
     if args.date_to:
-        decks = [d for d in decks if d.date < args.date_to]
+        decks = [
+            d for d in decks if d.event and d.event.date and d.event.date < args.date_to
+        ]
     if args.players:
-        decks = [d for d in decks if (d.players_count or 0) >= args.players]
+        decks = [
+            d for d in decks if d.event and (d.event.players_count or 0) >= args.players
+        ]
     return decks
 
 
@@ -458,7 +519,6 @@ def add_card_filters(parser):
     )
     parser.add_argument(
         "--capacity",
-        type=int,
         action=CapacityChoice,
         metavar="CAPACITY",
         nargs="+",
@@ -522,37 +582,37 @@ def add_card_filters(parser):
     )
 
 
+#: Dimensions accepted directly by `CardDict.search`, mapped from CLI option names.
+_SEARCH_DIMENSIONS = {
+    "discipline",
+    "clan",
+    "type",
+    "group",
+    "bonus",
+    "trait",
+    "capacity",
+    "set",
+    "sect",
+    "title",
+    "city",
+    "rarity",
+    "precon",
+    "artist",
+}
+
+
 def filter_cards(args):
     """Filter cards."""
     _init()
-    args = {
+    raw = {
         k: v
         for k, v in vars(args).items()
         if k
-        in {
-            "discipline",
-            "clan",
-            "type",
-            "group",
-            "exclude_set",
-            "exclude_type",
-            "no_reprint",
-            "bonus",
-            "text",
-            "trait",
-            "capacity",
-            "set",
-            "sect",
-            "title",
-            "city",
-            "rarity",
-            "precon",
-            "artist",
-        }
+        in (_SEARCH_DIMENSIONS | {"exclude_set", "exclude_type", "no_reprint", "text"})
     }
-    exclude_set = set(args.pop("exclude_set", None) or [])
-    exclude_type = set(args.pop("exclude_type", None) or [])
-    if args.pop("no_reprint", None):
+    exclude_set = set(raw.pop("exclude_set", None) or [])
+    exclude_type = set(raw.pop("exclude_type", None) or [])
+    if raw.pop("no_reprint", None):
         exclude_set |= {
             "Anthology",
             "Echoes of Gehenna",
@@ -571,21 +631,41 @@ def filter_cards(args):
             "Shadows of Berlin",
             "Twenty-Fifth Anniversary",
         }
-    args["text"] = " ".join(args.pop("text") or [])
-    args = {k: v for k, v in args.items() if v}
-    ret = set(vtes.VTES.search(**args))
+    text = " ".join(raw.pop("text", None) or [])
+    # capacity is indexed as strings ("1".."11")
+    if raw.get("capacity"):
+        raw["capacity"] = [str(c) for c in raw["capacity"]]
+    criteria = {k: v for k, v in raw.items() if v}
+    if text:
+        # "text" matches name, card text or flavor text (union of the three)
+        ret = (
+            set(VTES.search(n=None, name=[text]))
+            | set(VTES.search(n=None, card_text=[text]))
+            | set(VTES.search(n=None, flavor_text=[text]))
+        )
+        if criteria:
+            ret &= set(VTES.search(n=None, **criteria))
+    else:
+        ret = set(VTES.search(n=None, **criteria))
     for exclude in exclude_type:
-        ret -= set(vtes.VTES.search(type=[exclude]))
+        ret -= set(VTES.search(n=None, type=[exclude]))
     for exclude in exclude_set:
-        ret -= set(vtes.VTES.search(set=[exclude]))
+        ret -= set(VTES.search(n=None, set=[exclude]))
     return ret
 
 
-def typical_copies(A, card, naked=False):
-    """Get typical number of copies of a card in a deck."""
-    deviation = math.sqrt(A.variance[card])
-    min_copies = max(1, round(A.average[card] - deviation))
-    max_copies = max(1, round(A.average[card] + deviation))
+def typical_copies(stats, card, naked=False):
+    """Get typical number of copies of a card in a deck.
+
+    Args:
+        stats: A `krcg.analyzer.stats` map: card -> (average, variance).
+        card: The card to describe.
+        naked: If True, return only the range without the "copy/copies" suffix.
+    """
+    average, variance = stats[card]
+    deviation = math.sqrt(variance)
+    min_copies = max(1, round(average - deviation))
+    max_copies = max(1, round(average + deviation))
     if min_copies == max_copies:
         ret = f"{min_copies}"
     else:

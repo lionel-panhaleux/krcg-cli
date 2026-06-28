@@ -1,42 +1,19 @@
 """Configuration for pytest."""
 
 import pytest
-import requests
 
-from krcg import config
-from krcg import cards as krcg_cards
-from krcg import vtes as krcg_vtes
-from krcg import twda as krcg_twda
+from krcg.collections import CardDict
 
-
-def pytest_sessionstart(session):
-    """Check for internet connection."""
-    # Do not launch tests is there is no proper Internet connection.
-    try:
-        requests.get("http://www.google.com", timeout=1)
-    except requests.exceptions.RequestException:
-        pytest.fail("No internet connection")
-    try:
-        requests.get(config.KRCG_STATIC_SERVER, timeout=1)
-    except requests.exceptions.RequestException:
-        pytest.fail("KRCG website not available")
+from krcg_cli.subcommands import _utils
 
 
 @pytest.fixture(autouse=True)
-def reset_krcg_state(monkeypatch):
-    """Ensure a consistent krcg load mode and clear caches before each test.
+def reset_krcg_state():
+    """Clear the cards and TWDA singletons so each test starts fresh.
 
-    - Default to LOCAL_CARDS offline mode so tests are not order-dependent.
-    - Clear VTES and TWDA singletons so each test starts fresh.
+    krcg v5 ships its data offline, so tests need no network connection; this
+    only keeps the lazily-loaded `_utils.VTES` / `_utils.TWDA` order-independent.
     """
-    monkeypatch.setenv("LOCAL_CARDS", "1")
-    krcg_cards.LOCAL_CARDS = "1"
-    try:
-        krcg_vtes.VTES.clear()
-    except Exception:
-        pass
-    try:
-        krcg_twda.TWDA.clear()
-    except Exception:
-        pass
+    _utils.VTES = CardDict()
+    _utils.TWDA = {}
     yield

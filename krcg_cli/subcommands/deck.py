@@ -3,9 +3,8 @@
 from datetime import date as datetime_date
 import sys
 
-from krcg import twda
+from krcg import providers
 from krcg import utils as krcg_utils
-from krcg import vtes
 
 from . import _utils
 
@@ -29,21 +28,27 @@ def add_parser(parser):
 def deck(args):
     """Show TWDA decks."""
     # Ensure TWDA is loaded, but avoid needlessly reloading across calls
-    if not twda.TWDA:
+    if not _utils.TWDA:
         _utils._init(with_twda=True)
+    author_index = set()
+    for d in _utils.TWDA.values():
+        if d.player:
+            author_index.add(krcg_utils.normalize(d.player))
+        if d.author:
+            author_index.add(krcg_utils.normalize(d.author))
     filters = set(args.filter)
     joined_args = krcg_utils.normalize(" ".join(args.filter))
-    deck_ids = [i for i in args.filter if i in twda.TWDA]
+    deck_ids = [i for i in args.filter if i in _utils.TWDA]
     filters -= set(deck_ids)
-    cards = [vtes.VTES[c] for c in args.filter if c in vtes.VTES]
-    filters -= set(cards)
-    if joined_args and joined_args in vtes.VTES:
-        cards.append(vtes.VTES[joined_args])
+    cards = [_utils.VTES[c] for c in args.filter if c in _utils.VTES]
+    filters -= {c for c in args.filter if c in _utils.VTES}
+    if joined_args and joined_args in _utils.VTES:
+        cards.append(_utils.VTES[joined_args])
         filters.clear()
     authors = [krcg_utils.normalize(a) for a in args.filter]
-    authors = [a for a in authors if a in twda.TWDA.by_author]
-    filters -= set(authors)
-    if joined_args and joined_args in twda.TWDA.by_author:
+    authors = [a for a in authors if a in author_index]
+    filters -= {a for a in args.filter if krcg_utils.normalize(a) in author_index}
+    if joined_args and joined_args in author_index:
         authors.append(joined_args)
         filters.clear()
     if filters:
@@ -57,7 +62,7 @@ def deck(args):
             d
             for d in decks
             if d.id in deck_ids
-            or (cards and all(c in d for c in cards))
+            or (cards and all(_utils.card_in_deck(c, d) for c in cards))
             or krcg_utils.normalize(d.player) in authors
             or krcg_utils.normalize(d.author) in authors
         ]
@@ -66,10 +71,10 @@ def deck(args):
     if not args.full:
         print(f"-- {len(decks)} decks --")
 
-    for d in sorted(decks, key=lambda a: a.date if a.date else datetime_date.max):
+    for d in sorted(decks, key=lambda a: _utils.deck_date(a) or datetime_date.max):
         if args.full:
             print(f"[{d.id:<15}]===================================================")
-            print(d.to_txt())
+            print(providers.serialize_twd(d, _utils.VTES))
         else:
-            print(f"[{d.id}] {d.name}")
+            print(f"[{d.id}] {d.name or 'None'}")
     return 0

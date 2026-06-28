@@ -87,18 +87,22 @@ Choose a ready Camarilla vampire. Successful referendum means you search your li
 
 -- Rulings
 If the weapon retrieved costs blood, that cost is paid by the vampire chosen by the terms. [LSJ 20040518]
-Requirements do not apply. If a discipline is required (eg. {Inscription}) and the Alastor vampire does not have it, the inferior version is used. [ANK 20200901] [LSJ 20040518-2]
 Finding equipment is optional. When no equipment is found, alastor is still attached. [LSJ 20050331-2]
 Cards requiring a discipline come in play at the inferior version. [RBK equip] [RBK recruit-ally] [RBK employ-retainer]
+Requirements do not apply. If the cost is X (e.g. {Reanimated Corpse}), X is zero. If the effect puts/moves a minion into the ready region, that minion can act this turn. [LSJ 20100204] [LSJ 20040518-2] [LSJ 20100302-1]
+Cannot be used or played if the conditions for the terms of the referendum cannot be met (e.g. no legal selection, insufficient cards/players to choose from, prohibited by card text, uniqueness, etc). [LSJ 20100129] [ANK 20191228]
 
 -- Rulings references
 LSJ 20040518: https://groups.google.com/g/rec.games.trading-cards.jyhad/c/4emymfUPwAM/m/B2SCC7L6kuMJ
-ANK 20200901: https://www.vekn.net/forum/rules-questions/78830-alastor-and-ankara-citadel#100653
-LSJ 20040518-2: https://groups.google.com/g/rec.games.trading-cards.jyhad/c/4emymfUPwAM/m/JF_o7OOoCbkJ
 LSJ 20050331-2: https://groups.google.com/g/rec.games.trading-cards.jyhad/c/NLFFYNok1Ns/m/n7mHhZ_oTRQJ
 RBK equip: https://www.vekn.net/rulebook#equip
 RBK recruit-ally: https://www.vekn.net/rulebook#recruit-ally
 RBK employ-retainer: https://www.vekn.net/rulebook#employ-retainer
+LSJ 20100204: https://groups.google.com/g/rec.games.trading-cards.jyhad/c/o5Xnzc8G774/m/yovVizGngKsJ
+LSJ 20040518-2: https://groups.google.com/g/rec.games.trading-cards.jyhad/c/4emymfUPwAM/m/JF_o7OOoCbkJ
+LSJ 20100302-1: https://groups.google.com/g/rec.games.trading-cards.jyhad/c/jmmm0WRUPvs/m/ny5F1OnSUsEJ
+LSJ 20100129: https://groups.google.com/g/rec.games.trading-cards.jyhad/c/X8Uu7Sk56P4/m/fgP7NfnDpCkJ
+ANK 20191228: https://www.vekn.net/forum/rules-questions/78262-parity-shift-without-target#98358
 """  # noqa: E501
     )
 

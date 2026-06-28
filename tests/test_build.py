@@ -13,25 +13,25 @@ def test(capsys):
         == """Created by: KRCG
 
 Inspired by:
- - 2013fsfiiifb         !Ventrue
- - 2013bdmspb           Ventrue! Grinder
  - 2013addbspb          Ventrue! Grinder
- - 2013tnotbspb         Ventrue! Grinder
+ - 2013bdmspb           Ventrue! Grinder
  - 2013bssbotuk         Gents on the town, twirling their canes v7 2013
- - 2013ukdcp            Owain's Grindhouse
  - 2013ecqllf           (No Name)
  - 2013fdss             Ventrue Anti Grind
+ - 2013fsfiiifb         !Ventrue
+ - 2013tnotbspb         Ventrue! Grinder
+ - 2013ukdcp            Owain's Grindhouse
 Crypt (12 cards, min=16, max=30, avg=5.75)
 ------------------------------------------
-1x Jephta Hester               5 DOM FOR aus                  Ventrue antitribu:4
-1x Ulrike Rothbart             3 dom for                      Ventrue antitribu:4
-2x Owain Evans, The Wanderer   8 AUS DOM FOR cel pre          Ventrue antitribu:3
-2x Blackhorse Tanner           7 AUS DOM FOR                  Ventrue antitribu:3
-2x Neighbor John               5 AUS dom for                  Ventrue antitribu:4
-1x Lana Butcher                3 dom for                      Ventrue:3
-1x Jefferson Foster            6 AUS DOM for tha      bishop  Ventrue antitribu:4
-1x Joseph O'Grady              7 DOM FOR aus cel              Ventrue antitribu:3
-1x Ilyana Ravidovich           5 aus dom for pre              Ventrue:3
+2x Owain Evans, The Wanderer  8  AUS DOM FOR cel pre          Ventrue antitribu:3
+2x Blackhorse Tanner          7  AUS DOM FOR                  Ventrue antitribu:3
+2x Neighbor John              5  AUS dom for                  Ventrue antitribu:4
+1x Joseph O'Grady             7  DOM FOR aus cel              Ventrue antitribu:3
+1x Jefferson Foster           6  AUS DOM for tha      bishop  Ventrue antitribu:4
+1x Ilyana Ravidovich          5  aus dom for pre              Ventrue:3
+1x Jephta Hester              5  DOM FOR aus                  Ventrue antitribu:4
+1x Lana Butcher               3  dom for                      Ventrue:3
+1x Ulrike Rothbart            3  dom for                      Ventrue antitribu:4
 
 Library (90 cards)
 Master (17; 6 trifle)
@@ -64,12 +64,11 @@ Action Modifier (9)
 1x Daring the Dawn
 1x Day Operation
 
-Reaction (31)
+Reaction (28)
 5x Deflection
 2x Delaying Tactics
 2x Eagle's Sight
 2x Enhanced Senses
-3x Eyes of Argus
 2x Forced Awakening
 2x My Enemy's Enemy
 4x On the Qui Vive
@@ -77,10 +76,11 @@ Reaction (31)
 4x Telepathic Misdirection
 3x Wake with Evening's Freshness
 
-Combat (18)
+Combat (21)
 5x Hidden Strength
 4x Indomitability
 4x Rolling with the Punches
+3x Soak
 5x Weighted Walking Stick
 
 Event (2)

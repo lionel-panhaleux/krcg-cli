@@ -18,10 +18,10 @@ keywords = [
     "CLI",
 ]
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 classifiers = [
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.13",
     "License :: OSI Approved :: MIT License",
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -37,7 +37,7 @@ dependencies = [
     "requests",
     "tqdm",
     "unidecode",
-    "krcg>=4.13",
+    "krcg>=5",
 ]
 
 [project.scripts]
@@ -50,14 +50,8 @@ Repository = "https://github.com/lionel-panhaleux/krcg-cli"
 [tool.hatch.build.targets.wheel]
 packages = ["krcg_cli"]
 
-[tool.mypy]
-mypy_path = "stubs"
-disallow_incomplete_defs = true
-no_implicit_optional = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-warn_return_any = true
-check_untyped_defs = true
+[tool.ty.environment]
+extra-paths = ["stubs"]
 
 [tool.ruff.lint]
 select = ["E", "D", "F", "W"]
@@ -68,9 +62,9 @@ convention = "google"
 [tool.uv]
 dev-dependencies = [
     "ipython",
-    "mypy",
     "pytest",
     "ruff",
+    "ty",
     "types-PyYAML",
     "types-requests",
 ]

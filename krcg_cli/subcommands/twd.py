@@ -25,14 +25,17 @@ def twd(args):
         if not deck.id:
             print(f"Deck {deck.name} has no id", file=sys.stderr)
             continue
-        if deck.date:
-            decks_by_year[deck.date.year].add(deck.id)
+        date = _utils.deck_date(deck)
+        if date:
+            decks_by_year[date.year].add(deck.id)
         decks_clans[deck.id] = set(
             clan
             for clan, count in collections.Counter(
                 itertools.chain.from_iterable(
-                    c.clans * count
-                    for c, count in deck.cards(lambda c: c.crypt and c.id != 200076)
+                    _utils.card_clans(c) * count
+                    for c, count in _utils.deck_cards(
+                        deck, lambda c: _utils.is_crypt(c) and c.id != 200076
+                    )
                 )
             ).most_common()
             if count > 3
@@ -41,8 +44,8 @@ def twd(args):
             discipline
             for discipline, count in collections.Counter(
                 itertools.chain.from_iterable(
-                    c.disciplines * count
-                    for c, count in deck.cards(lambda c: c.library)
+                    _utils.card_disciplines(c) * count
+                    for c, count in _utils.deck_cards(deck, _utils.is_library)
                 )
             ).most_common()
             if count > 5

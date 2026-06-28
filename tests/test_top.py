@@ -18,7 +18,7 @@ Canine Horde                   (played in 56 decks, typically 1-2 copies)
 Raven Spy                      (played in 47 decks, typically 1-5 copies)
 Aid from Bats                  (played in 46 decks, typically 6-14 copies)
 Army of Rats                   (played in 40 decks, typically 1-2 copies)
-Guard Dogs                     (played in 30 decks, typically 1-4 copies)
+Stick                          (played in 30 decks, typically 1 copy)
 Beetleman                      (played in 30 decks, typically 1 copy)
 """
     )

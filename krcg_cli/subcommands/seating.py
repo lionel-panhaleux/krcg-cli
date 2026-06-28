@@ -2,6 +2,7 @@
 
 import argparse
 import collections
+import contextlib
 import multiprocessing
 import sys
 
@@ -78,8 +79,7 @@ yield unusable seatings listing only the players of the last round.
     parser.add_argument(
         "-o",
         "--output",
-        type=argparse.FileType("a"),
-        default=sys.stdout,
+        metavar="FILE",
         help="File to append the result to",
     )
     parser.add_argument(
@@ -130,6 +130,16 @@ GROUPS = {
     1: "adjacent",
     2: "non-adjacent",
 }
+
+
+@contextlib.contextmanager
+def _output_stream(path):
+    """Yield the output stream: a file opened in append mode, or stdout."""
+    if path:
+        with open(path, "a") as stream:
+            yield stream
+    else:
+        yield sys.stdout
 
 
 class Progression:
@@ -216,37 +226,39 @@ def seat(options):
             print("", file=sys.stderr, end="")
     else:
         score = seating.Score(rounds)
-    if options.archon:
-        print(f"{len(players)}\tPlayers", file=options.output)
-    for i, round_ in enumerate(rounds, 1):
-        delimiter = ","
+    with _output_stream(options.output) as output:
         if options.archon:
-            delimiter = "\t"
-            for table in round_:
-                if len(table) == 4:
-                    table.append("")
-            print(f"\tRound {i}", file=options.output, end="\t")
-        print(
-            delimiter.join(str(p) for p in round_.iter_players()),
-            file=options.output,
-        )
+            print(f"{len(players)}\tPlayers", file=output)
+        for i, round_ in enumerate(rounds, 1):
+            delimiter = ","
+            if options.archon:
+                delimiter = "\t"
+                for table in round_:
+                    if len(table) == 4:
+                        table.append("")
+                print(f"\tRound {i}", file=output, end="\t")
+            print(
+                delimiter.join(str(p) for p in round_.iter_players()),
+                file=output,
+            )
 
-    if not options.verbose:
+        if not options.verbose:
+            return 0
+        print(
+            f"\n------------------- details ({len(players)} players)"
+            " -------------------",
+            file=output,
+        )
+        for i, round_ in enumerate(rounds, 1):
+            print(f"Round {i}: {round_}", file=output)
+        for index, (code, label, _) in enumerate(seating.RULES):
+            s = f"{code} {score.rules[index]:6.2f} "
+            if score.rules[index]:
+                s += f"NOK ({label}): {format_anomalies(score, code)}"
+            else:
+                s += f" OK ({label})"
+            print(s, file=output)
         return 0
-    print(
-        f"\n------------------- details ({len(players)} players) -------------------",
-        file=options.output,
-    )
-    for i, round_ in enumerate(rounds, 1):
-        print(f"Round {i}: {round_}", file=options.output)
-    for index, (code, label, _) in enumerate(seating.RULES):
-        s = f"{code} {score.rules[index]:6.2f} "
-        if score.rules[index]:
-            s += f"NOK ({label}): {format_anomalies(score, code)}"
-        else:
-            s += f" OK ({label})"
-        print(s, file=options.output)
-    return 0
 
 
 def format_anomalies(score, code):

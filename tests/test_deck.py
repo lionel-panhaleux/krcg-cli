@@ -23,7 +23,7 @@ May 8th 2010
 10 players
 Rudolf Scholz
 
--- +4
+-- +4!
 
 Deck Name: The Storage Procurers
 
@@ -34,18 +34,18 @@ Deflections.
 
 Crypt (12 cards, min=7, max=24, avg=3.75)
 -----------------------------------------
-1x Gilbert Duane          7 AUS DOM OBF      prince  Malkavian:1
-1x Mariel, Lady Thunder   7 DOM OBF aus tha          Malkavian:1
-1x Badr al-Budur          5 OBF cel dom qui          Banu Haqim:2
-1x Count Ormonde          5 OBF dom pre ser          Ministry:2
-1x Didi Meyers            5 DOM aus cel obf          Malkavian:1
-1x Zebulon                5 OBF aus dom pro          Malkavian:1
-1x Dimple                 2 obf                      Nosferatu:1
-1x Mustafa Rahman         2 dom                      Tremere:2
-1x Normal                 2 obf                      Malkavian:1
-1x Ohanna                 2 dom                      Malkavian:2
-1x Samson                 2 dom                      Ventrue antitribu:2
-1x Basil                  1 obf                      Pander:2
+1x Gilbert Duane (G1)    7  AUS DOM OBF      prince  Malkavian:1
+1x Mariel, Lady Thunder  7  DOM OBF aus tha          Malkavian:1
+1x Badr al-Budur         5  OBF cel dom qui          Banu Haqim:2
+1x Count Ormonde         5  OBF dom pre ser          Ministry:2
+1x Didi Meyers           5  DOM aus cel obf          Malkavian:1
+1x Zebulon               5  OBF aus dom pro          Malkavian:1
+1x Dimple                2  obf                      Nosferatu:1
+1x Mustafa Rahman        2  dom                      Tremere:2
+1x Normal                2  obf                      Malkavian:1
+1x Ohanna                2  dom                      Malkavian:2
+1x Samson                2  dom                      Ventrue antitribu:2
+1x Basil                 1  obf                      Pander:2
 
 Library (87 cards)
 Master (19; 3 trifle)

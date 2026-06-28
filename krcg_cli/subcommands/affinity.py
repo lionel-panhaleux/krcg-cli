@@ -3,7 +3,6 @@
 import sys
 
 from krcg import analyzer
-from krcg import vtes
 
 from . import _utils
 
@@ -29,28 +28,28 @@ def affinity(args):
     """Display cards affinity (most played together)."""
     decks = _utils.filter_twda(args)
     try:
-        cards = [vtes.VTES[name] for name in args.cards]
+        cards = [_utils.VTES[name] for name in args.cards]
     except KeyError as e:
         sys.stderr.write(f"Card not found: {e.args[0]}\n")
         return 1
-    A = analyzer.Analyzer(decks)
-    A.refresh(*cards, similarity=1)
-    if len(A.examples) < 4:
+    # decks playing all the reference cards (similarity=1)
+    examples = [d for d in decks if all(_utils.card_in_deck(c, d) for c in cards)]
+    if len(examples) < 4:
         print("Too few example in TWDA.")
-        if len(A.examples) > 0:
+        if len(examples) > 0:
             print(
                 "To see them:\n\tkrcg deck "
-                + " ".join('"' + card.usual_name + '"' for card in cards)
+                + " ".join('"' + card.unique_name + '"' for card in cards)
             )
         return 0
-    # do not include spoilers if affinity is within 50% of natural occurence
-    candidates = A.candidates(*cards, spoiler_multiplier=1.5)
+    stats = analyzer.stats(examples, _utils.VTES)
+    candidates = analyzer.affinity(decks, _utils.VTES, *cards, similarity=1.0)
     for card, score in candidates:
         score = round(score * 100 / len(cards))
         if args.min > score:
             break
         print(
-            f"{card.usual_name:<30} (in {score:.0f}% of decks, typically "
-            f"{_utils.typical_copies(A, card)})"
+            f"{card.unique_name:<30} (in {score:.0f}% of decks, typically "
+            f"{_utils.typical_copies(stats, card)})"
         )
     return 0

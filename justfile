@@ -10,7 +10,7 @@ quality:
     @echo "🔍 Running quality checks..."
     uv run ruff check
     uv run ruff format --check
-    uv run mypy krcg_cli
+    uv run ty check krcg_cli
     @echo "✅ Quality checks passed!"
 
 # Run tests (includes quality checks)
@@ -34,7 +34,7 @@ clean-build:
 
 clean: clean-build
     @echo "🧹 Cleaning cache..."
-    rm -rf .pytest_cache .mypy_cache .ruff_cache
+    rm -rf .pytest_cache .ruff_cache
     @echo "✅ Cleaned!"
 
 # Ensure we're on master branch and working tree is clean
