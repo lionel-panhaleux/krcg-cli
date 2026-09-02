@@ -1,10 +1,11 @@
 [build-system]
-requires = ["setuptools>=68"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "krcg-cli"
-version = "2.9.dev0"
+version = "2.8"
+license = "MIT"
 authors = [
     { name = "Lionel Panhaleux", email = "lionel.panhaleux+krcg@gmail.com" },
 ]
@@ -18,13 +19,12 @@ keywords = [
     "CLI",
 ]
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.14"
 classifiers = [
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
-    "License :: OSI Approved :: MIT License",
-    "Development Status :: 4 - Beta",
-    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.14",
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: End Users/Desktop",
     "Natural Language :: English",
     "Operating System :: OS Independent",
     "Environment :: Console",
@@ -34,14 +34,10 @@ dependencies = [
     "aiohttp",
     "arrow",
     "case-converter",
-    "requests",
-    "tqdm",
+    "krcg>=5.11",
+    "msgspec",
     "unidecode",
-    "krcg>=3.8",
 ]
-
-[project.optional-dependencies]
-dev = ["black", "ipython", "pytest", "ruff", "zest.releaser[recommended]"]
 
 [project.scripts]
 krcg = "krcg_cli:main"
@@ -49,8 +45,14 @@ krcg = "krcg_cli:main"
 [project.urls]
 Repository = "https://github.com/lionel-panhaleux/krcg-cli"
 
-[tool.setuptools.packages.find]
-include = ["krcg_cli*"]
+[tool.hatch.build.targets.wheel]
+packages = ["krcg_cli"]
 
-[tool.zest-releaser]
-create-wheel = true
+[tool.ruff.lint]
+select = ["E", "F", "W", "UP"]
+
+[dependency-groups]
+dev = ["ipython", "pytest", "ruff", "ty"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

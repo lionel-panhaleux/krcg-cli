@@ -1,0 +1,42 @@
+1	Channel 10
+2	Charisma
+1	Creepshow Casino
+1	KRCG News Radio
+2	Perfectionist
+6	Storage Annex
+3	Sudden Reversal
+3	Vessel
+1	Carlton Van Wyk
+1	Gregory Winter
+1	Impundulu
+1	Muddled Vampire Hunter
+1	Ossian
+6	Procurer
+1	Young Bloods
+1	Deer Rifle
+8	Flash Grenade
+6	Cloak the Gathering
+7	Conditioning
+2	Lost in Crowds
+4	Veil the Legions
+7	Deflection
+2	Delaying Tactics
+7	On the Qui Vive
+8	Concealed Weapon
+1	FBI Special Affairs Division
+1	Hunger Moon
+1	Restricted Vitae
+1	Unmasking, The
+Crypt:
+1	Badr al-Budur
+1	Basil
+1	Count Ormonde
+1	Didi Meyers
+1	Dimple
+1	Gilbert Duane (G1)
+1	Mariel, Lady Thunder
+1	Mustafa Rahman
+1	Normal
+1	Ohanna
+1	Samson
+1	Zebulon

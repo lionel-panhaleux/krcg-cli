@@ -1,16 +1,13 @@
-from krcg_cli.parser import execute as cli_execute
+import pytest
 
 
-def test(capsys):
-    cli_execute(["complete", "Pentex"])
-    outerr = capsys.readouterr()
-    assert outerr.err == ""
-    assert (
-        outerr.out
-        == """Pentex™ Loves You!
-Pentex™ Subversion
-Enzo Giovanni, Pentex Board of Directors
-Enzo Giovanni, Pentex Board of Directors (ADV)
-Harold Zettler, Pentex Director
-"""
-    )
+@pytest.mark.baseline
+def test(cli, snapshot):
+    code, out, err = cli("complete", "Pentex")
+    assert code == 0
+    assert err == ""
+    snapshot("complete-pentex", out)
+
+
+def test_no_match(cli):
+    assert cli("complete", "xyzzyfoo") == (1, "", "No match\n")

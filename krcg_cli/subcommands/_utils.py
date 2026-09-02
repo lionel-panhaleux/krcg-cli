@@ -1,35 +1,329 @@
-import aiohttp
+"""Shared helpers: data handles, argparse filters, display, and card prices."""
+
+from collections.abc import Iterator
 import argparse
 import asyncio
-import arrow
+import datetime
+import functools
 import itertools
 import json
 import logging
 import math
-import sys
+import os
 
+import aiohttp
+import arrow
 import caseconverter
 import unidecode
 
-import krcg.cards
-from krcg import deck
+import krcg
+from krcg import loader
+from krcg import models
 from krcg import twda
-from krcg import vtes
+
+logger = logging.getLogger("krcg")
 
 
-def _init(with_twda=False):
-    try:
-        if not vtes.VTES:
-            vtes.VTES.load()
-            if with_twda:
-                # if TWDA existed but VTES was not loaded, load TWDA anew
-                twda.TWDA.load()
-        if with_twda and not twda.TWDA:
-            twda.TWDA.load()
-    except:  # noqa: E722
-        sys.stderr.write("Fail to initialize - check your Internet connection.\n")
-        raise
+@functools.cache
+def get_cards() -> krcg.CardDict:
+    """The cards library, loaded once (bundled data, version cache when present)."""
+    if os.path.exists(loader.PICKLE_FILE):
+        return krcg.load()
+    return krcg.load_local()
 
+
+@functools.cache
+def get_twda() -> twda.DecksArchive:
+    """The TWDA, loaded once from the bundled snapshot."""
+    return twda.load()
+
+
+def deck_date(deck: models.Deck) -> datetime.date | None:
+    return deck.event.date if deck.event else None
+
+
+def deck_cards(deck: models.Deck) -> Iterator[tuple[models.Card, int]]:
+    """Yield (card, count) for each deck entry, resolved in the cards library."""
+    cards = get_cards()
+    for entry in deck.cards:
+        card = cards.get(entry.id)
+        if card:
+            yield card, entry.count
+
+
+def deck_plays(deck: models.Deck, card: models.Card) -> bool:
+    return any(entry.id == card.id for entry in deck.cards)
+
+
+# ---------------------------------------------------------------------- TWDA filters
+
+
+def add_twda_filters(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--from",
+        type=lambda s: arrow.get(s).date(),
+        dest="date_from",
+        help="only consider decks from that date on",
+    )
+    parser.add_argument(
+        "--to",
+        type=lambda s: arrow.get(s).date(),
+        dest="date_to",
+        help="only consider decks up to that date",
+    )
+    parser.add_argument(
+        "--players",
+        type=int,
+        default=0,
+        help="only consider decks that won against at least that many players",
+    )
+
+
+def filter_twda(args: argparse.Namespace) -> list[models.Deck]:
+    decks = list(get_twda().values())
+    if args.date_from:
+        decks = [
+            d for d in decks if (deck_date(d) or datetime.date.min) >= args.date_from
+        ]
+    if args.date_to:
+        decks = [d for d in decks if (deck_date(d) or datetime.date.max) < args.date_to]
+    if args.players:
+        decks = [d for d in decks if d.event and d.event.players_count >= args.players]
+    return decks
+
+
+# ---------------------------------------------------------------------- card filters
+
+#: sets currently in print, excluded by --no-reprint
+IN_PRINT_SETS = [
+    "Anthology",
+    "Anthology I",
+    "Echoes of Gehenna",
+    "Fall of London",
+    "Fifth Edition",
+    "Fifth Edition (Anarch)",
+    "Fifth Edition (Companion)",
+    "First Blood",
+    "Heirs to the Blood Reprint",
+    "Keepers of Tradition Reprint",
+    "Lost Kindred",
+    "New Blood",
+    "New Blood II",
+    "New Blood III",
+    "Print on Demand",
+    "Sabbat Preconstructed",
+    "Sabbat V5",
+    "Shadows of Berlin",
+    "Thirtieth Anniversary",
+    "Twenty-Fifth Anniversary",
+]
+
+
+def set_code(name: str) -> str:
+    """The code of a set given by code or name (case-insensitive)."""
+    lookup = {
+        key.lower(): expansion.code
+        for expansion in get_cards().sets.values()
+        for key in (expansion.code, expansion.name)
+    }
+    return lookup[name.lower()]
+
+
+def choices(dimension: str) -> list[str]:
+    """The values a search dimension can take (None excluded)."""
+    return [v for v in get_cards().search_dimensions[dimension] if v]
+
+
+class DimensionChoice(argparse.Action):
+    """Choices with nargs +/*, resolved to the dimension's canonical values.
+
+    argparse cannot combine `choices` with `nargs`, cf. bugs.python.org/issue9625.
+    Matching ignores case except for disciplines (case encodes the level).
+    Sets accept names as well as codes, groups accept bare numbers.
+    """
+
+    def __init__(self, dimension: str, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.dimension = dimension
+
+    def canonical(self, value: str) -> str:
+        if self.dimension == "set":
+            return set_code(value)
+        if self.dimension == "group" and value.isdigit():
+            value = "G" + value
+        values = choices(self.dimension)
+        if self.dimension == "discipline":
+            lookup = {v: v for v in values}
+            return lookup[value]
+        lookup = {v.lower(): v for v in values}
+        return lookup[value.lower()]
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        result = []
+        for value in values:
+            try:
+                result.append(self.canonical(value))
+            except KeyError:
+                raise argparse.ArgumentError(
+                    self,
+                    f"invalid choice: {value} (choose from: "
+                    f"{', '.join(choices(self.dimension))})",
+                )
+        setattr(namespace, self.dest, result)
+
+
+def add_card_filters(parser: argparse.ArgumentParser) -> None:
+    def add(*flags: str, dimension: str, help: str, listed: bool = True, **kwargs):
+        if listed:
+            help += f" ({', '.join(choices(dimension))})"
+        parser.add_argument(
+            *flags,
+            action=DimensionChoice,
+            dimension=dimension,
+            metavar=dimension.upper(),
+            nargs="+",
+            help=help,
+            **kwargs,
+        )
+
+    add("-d", "--discipline", dimension="discipline", help="Filter by discipline")
+    add("-c", "--clan", dimension="clan", help="Filter by clan")
+    add("-t", "--type", dimension="type", help="Filter by type")
+    add("-g", "--group", dimension="group", help="Filter by group")
+    add(
+        "-x",
+        "--exclude-set",
+        dimension="set",
+        dest="exclude_set",
+        help="Exclude given sets",
+    )
+    add(
+        "-e",
+        "--exclude-type",
+        dimension="type",
+        dest="exclude_type",
+        help="Exclude given types",
+    )
+    add("-b", "--bonus", dimension="bonus", help="Filter by bonus")
+    parser.add_argument(
+        "--text",
+        metavar="TEXT",
+        nargs="+",
+        help="Filter by text (including name and flavor text)",
+    )
+    add("--trait", dimension="trait", help="Filter by trait")
+    add("--capacity", dimension="capacity", help="Filter by capacity")
+    add("--set", dimension="set", help="Filter by set (name or code)")
+    add("--sect", dimension="sect", help="Filter by sect")
+    add("--title", dimension="title", help="Filter by title")
+    add("--city", dimension="city", help="Filter by city", listed=False)
+    add("--rarity", dimension="rarity", help="Filter by rarity")
+    add("--precon", dimension="precon", help="Filter by preconstructed starter")
+    add("--artist", dimension="artist", help="Filter by artist", listed=False)
+    parser.add_argument(
+        "--no-reprint",
+        action="store_true",
+        help="Filter out cards that are currently in print",
+    )
+
+
+SEARCH_DIMENSIONS = [
+    "discipline",
+    "clan",
+    "type",
+    "group",
+    "bonus",
+    "trait",
+    "capacity",
+    "set",
+    "sect",
+    "title",
+    "city",
+    "rarity",
+    "precon",
+    "artist",
+]
+
+
+def filter_cards(args: argparse.Namespace) -> set[models.Card]:
+    """The cards matching the card filters (all cards if there are none)."""
+    cards = get_cards()
+    criteria = {
+        dimension: getattr(args, dimension)
+        for dimension in SEARCH_DIMENSIONS
+        if getattr(args, dimension, None)
+    }
+    text = " ".join(args.text or [])
+    if text:
+        result = set[models.Card]()
+        for dimension in ("name", "card_text", "flavor_text"):
+            result |= set(cards.search(n=None, **criteria, **{dimension: [text]}))
+    elif criteria:
+        result = set(cards.search(n=None, **criteria))
+    else:
+        result = set(cards.cards())
+    exclude_set = set(args.exclude_set or [])
+    if args.no_reprint:
+        exclude_set |= {set_code(name) for name in IN_PRINT_SETS}
+    for type_ in args.exclude_type or []:
+        result -= set(cards.search(n=None, type=[type_]))
+    for code in exclude_set:
+        result -= set(cards.search(n=None, set=[code]))
+    return result
+
+
+# ---------------------------------------------------------------------- display
+
+
+def typical_copies(
+    stats: dict[models.Card, tuple[float, float]], card: models.Card, naked=False
+) -> str:
+    """Typical count played, from the analyzer stats: "1-3 copies"."""
+    average, variance = stats[card]
+    deviation = math.sqrt(variance)
+    min_copies = max(1, round(average - deviation))
+    max_copies = max(1, round(average + deviation))
+    if min_copies == max_copies:
+        ret = f"{min_copies}"
+    else:
+        ret = f"{min_copies}-{max_copies}"
+    if naked:
+        return ret
+    if max_copies > 1:
+        ret += " copies"
+    else:
+        ret += " copy"
+    return ret
+
+
+def card_text(card: models.Card, krcg_format: bool) -> str:
+    """Full text of a card (types, traits, costs, ...) for display purposes"""
+    text = "[{}]".format("/".join(card.types))
+    if isinstance(card, models.CryptCard):
+        if card.clan:
+            text += f"[{card.clan}]"
+        if card.capacity:
+            text += f"[{card.capacity}]"
+        if not krcg_format and card.group:
+            text += f"(g.{card.group.value[1:]})"
+    if isinstance(card, models.LibraryCard):
+        if card.clan_requirement:
+            text += "[{}]".format("/".join(card.clan_requirement))
+        if card.cost:
+            text += f"[{card.cost.value}{card.cost.type.value[0]}]"
+        if card.burn_option:
+            text += "(Burn Option)"
+    if card.banned:
+        text += f" -- BANNED in {card.banned.year}"
+    if not krcg_format:
+        text += f" -- (#{card.id})"
+    if isinstance(card, models.CryptCard):
+        text += "\n{}".format(" ".join(card.disciplines) or "-- No discipline")
+    text += f"\n{card.text}"
+    return text
+
+
+# ---------------------------------------------------------------------- prices
 
 # The CGC shop is a WooCommerce site exposing a public WPGraphQL endpoint.
 # Products are looked up by slug; a variable product has one variation per
@@ -140,8 +434,6 @@ NAMES_MAP = {
 
 
 def batched(iterable, n):
-    # py 3.12 function
-    # batched('ABCDEFG', 3) --> ABC DEF G
     it = iter(iterable)
     while batch := tuple(itertools.islice(it, n)):
         yield batch
@@ -162,14 +454,14 @@ async def get_cards_price_CGC(
         for i, name in enumerate(card_names)
     )
     async with session.post(
-        CGC_GRAPHQL_URL, json={"query": query}, timeout=60
+        CGC_GRAPHQL_URL, json={"query": query}, timeout=aiohttp.ClientTimeout(total=60)
     ) as response:
         response.raise_for_status()
         result = await response.json()
     for error in result.get("errors") or []:
         # per-product errors (unknown slug) have a path, query errors do not
         level = logging.DEBUG if "path" in error else logging.WARNING
-        logging.getLogger().log(level, "CGC price lookup: %s", error.get("message"))
+        logger.log(level, "CGC price lookup: %s", error.get("message"))
     data = result.get("data") or {}
     return [cgc_product_price(data.get(f"p{i}")) for i in range(len(card_names))]
 
@@ -181,12 +473,12 @@ async def get_all_cards_price_CGC(card_names: list[str]) -> list[float | None]:
             try:
                 prices.extend(await get_cards_price_CGC(session, batch))
             except (aiohttp.ClientError, TimeoutError, ValueError) as e:
-                logging.getLogger().warning("CGC price lookup failed: %r", e)
+                logger.warning("CGC price lookup failed: %r", e)
                 prices.extend([None] * len(batch))
     return prices
 
 
-def add_price_option(parser):
+def add_price_option(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--price",
         action="store_true",
@@ -194,394 +486,6 @@ def add_price_option(parser):
     )
 
 
-def get_cards_prices(cards):
-    prices = asyncio.run(get_all_cards_price_CGC([c.usual_name for c in cards]))
+def get_cards_prices(cards: list[models.Card]) -> dict[int, float]:
+    prices = asyncio.run(get_all_cards_price_CGC([c.unique_name for c in cards]))
     return {c.id: p for c, p in zip(cards, prices) if p}
-
-
-class NargsChoice(argparse.Action):
-    """Choices with nargs +/*: this is a known issue for argparse
-    cf. https://bugs.python.org/issue9625
-    """
-
-    CASE_SENSITIVE = False
-
-    def get_choices(self): ...
-
-    def __call__(self, parser, namespace, values, option_string=None):
-        choices = self.get_choices()
-        if not self.CASE_SENSITIVE:
-            values = [v.lower() for v in values]
-            choices = {c.lower() for c in choices}
-        if values:
-            for value in values:
-                if value not in choices:
-                    raise argparse.ArgumentError(
-                        self,
-                        f"invalid choice: {value} (choose from: "
-                        f"{', '.join(self.get_choices())})",
-                    )
-        setattr(namespace, self.dest, values)
-
-
-def add_twda_filters(parser):
-    parser.add_argument(
-        "--from",
-        type=lambda s: arrow.get(s).date(),
-        dest="date_from",
-        help="only consider decks from that date on",
-    )
-    parser.add_argument(
-        "--to",
-        type=lambda s: arrow.get(s).date(),
-        dest="date_to",
-        help="only consider decks up to that date",
-    )
-    parser.add_argument(
-        "--players",
-        type=int,
-        default=0,
-        help="only consider decks that won against at least that many players",
-    )
-
-
-def filter_twda(args) -> list[deck.Deck]:
-    _init(with_twda=True)
-    decks = list(twda.TWDA.values())
-    if args.date_from:
-        decks = [d for d in decks if d.date >= args.date_from]
-    if args.date_to:
-        decks = [d for d in decks if d.date < args.date_to]
-    if args.players:
-        decks = [d for d in decks if (d.players_count or 0) >= args.players]
-    return decks
-
-
-class DisciplineChoice(NargsChoice):
-    CASE_SENSITIVE = True
-
-    @staticmethod
-    def get_choices():
-        return vtes.VTES.search_dimensions["discipline"]
-
-
-class ClanChoice(NargsChoice):
-    @staticmethod
-    def get_choices():
-        return vtes.VTES.search_dimensions["clan"]
-
-    # ALIASES = config.CLANS_AKA
-
-
-class TypeChoice(NargsChoice):
-    @staticmethod
-    def get_choices():
-        return vtes.VTES.search_dimensions["type"]
-
-
-class TraitChoice(NargsChoice):
-    @staticmethod
-    def get_choices():
-        return vtes.VTES.search_dimensions["trait"]
-
-
-class GroupChoice(NargsChoice):
-    @staticmethod
-    def get_choices():
-        return vtes.VTES.search_dimensions["group"]
-
-
-class BonusChoice(NargsChoice):
-    @staticmethod
-    def get_choices():
-        return vtes.VTES.search_dimensions["bonus"]
-
-
-class CapacityChoice(NargsChoice):
-    @staticmethod
-    def get_choices():
-        return vtes.VTES.search_dimensions["capacity"]
-
-
-class SectChoice(NargsChoice):
-    @staticmethod
-    def get_choices():
-        return vtes.VTES.search_dimensions["sect"]
-
-
-class TitleChoice(NargsChoice):
-    @staticmethod
-    def get_choices():
-        return vtes.VTES.search_dimensions["title"]
-
-
-class CityChoice(NargsChoice):
-    @staticmethod
-    def get_choices():
-        return vtes.VTES.search_dimensions["city"]
-
-
-class SetChoice(NargsChoice):
-    @staticmethod
-    def get_choices():
-        return vtes.VTES.search_dimensions["set"]
-
-
-class RarityChoice(NargsChoice):
-    @staticmethod
-    def get_choices():
-        return vtes.VTES.search_dimensions["rarity"]
-
-
-class PreconChoice(NargsChoice):
-    @staticmethod
-    def get_choices():
-        return vtes.VTES.search_dimensions["precon"]
-
-
-class ArtistChoice(NargsChoice):
-    @staticmethod
-    def get_choices():
-        return vtes.VTES.search_dimensions["artist"]
-
-
-def add_card_filters(parser):
-    parser.add_argument(
-        "-d",
-        "--discipline",
-        action=DisciplineChoice,
-        metavar="DISCIPLINE",
-        nargs="+",
-        help="Filter by discipline ({})".format(
-            ", ".join(DisciplineChoice.get_choices())
-        ),
-    )
-    parser.add_argument(
-        "-c",
-        "--clan",
-        action=ClanChoice,
-        metavar="CLAN",
-        nargs="+",
-        help="Filter by clan ({})".format(", ".join(ClanChoice.get_choices())),
-    )
-    parser.add_argument(
-        "-t",
-        "--type",
-        action=TypeChoice,
-        metavar="TYPE",
-        nargs="+",
-        help="Filter by type ({})".format(", ".join(TypeChoice.get_choices())),
-    )
-    parser.add_argument(
-        "-g",
-        "--group",
-        action=GroupChoice,
-        metavar="GROUP",
-        nargs="+",
-        help="Filter by group ({})".format(
-            ", ".join(map(str, GroupChoice.get_choices()))
-        ),
-    )
-    parser.add_argument(
-        "-x",
-        "--exclude-set",
-        action=SetChoice,
-        metavar="SET",
-        nargs="+",
-        help="Exclude given types ({})".format(", ".join(SetChoice.get_choices())),
-    )
-    parser.add_argument(
-        "-e",
-        "--exclude-type",
-        action=TypeChoice,
-        metavar="TYPE",
-        nargs="+",
-        help="Exclude given types ({})".format(", ".join(TypeChoice.get_choices())),
-    )
-    parser.add_argument(
-        "-b",
-        "--bonus",
-        action=BonusChoice,
-        metavar="BONUS",
-        nargs="+",
-        help="Filter by bonus ({})".format(", ".join(BonusChoice.get_choices())),
-    )
-    parser.add_argument(
-        "--text",
-        metavar="TEXT",
-        nargs="+",
-        help="Filter by text (including name and flavor text)",
-    )
-    parser.add_argument(
-        "--trait",
-        action=TraitChoice,
-        metavar="TRAIT",
-        nargs="+",
-        help="Filter by trait ({})".format(", ".join(TraitChoice.get_choices())),
-    )
-    parser.add_argument(
-        "--capacity",
-        type=int,
-        action=CapacityChoice,
-        metavar="CAPACITY",
-        nargs="+",
-        help="Filter by capacity ({})".format(
-            ", ".join(map(str, CapacityChoice.get_choices()))
-        ),
-    )
-    parser.add_argument(
-        "--set",
-        action=SetChoice,
-        metavar="SET",
-        nargs="+",
-        help="Filter by set",
-    )
-    parser.add_argument(
-        "--sect",
-        action=SectChoice,
-        metavar="SECT",
-        nargs="+",
-        help="Filter by sect ({})".format(", ".join(SectChoice.get_choices())),
-    )
-    parser.add_argument(
-        "--title",
-        action=TitleChoice,
-        metavar="TITLE",
-        nargs="+",
-        help="Filter by title ({})".format(", ".join(TitleChoice.get_choices())),
-    )
-    parser.add_argument(
-        "--city",
-        action=CityChoice,
-        metavar="CITY",
-        nargs="+",
-        help="Filter by city",
-    )
-    parser.add_argument(
-        "--rarity",
-        action=RarityChoice,
-        metavar="RARITY",
-        nargs="+",
-        help="Filter by rarity ({})".format(", ".join(RarityChoice.get_choices())),
-    )
-    parser.add_argument(
-        "--precon",
-        action=PreconChoice,
-        metavar="PRECON",
-        nargs="+",
-        help="Filter by preconstructed starter",
-    )
-    parser.add_argument(
-        "--artist",
-        action=ArtistChoice,
-        metavar="ARTIST",
-        nargs="+",
-        help="Filter by artist",
-    )
-    parser.add_argument(
-        "--no-reprint",
-        action="store_true",
-        help="Filter our cards that are currently in print",
-    )
-
-
-def filter_cards(args):
-    _init()
-    args = {
-        k: v
-        for k, v in vars(args).items()
-        if k
-        in {
-            "discipline",
-            "clan",
-            "type",
-            "group",
-            "exclude_set",
-            "exclude_type",
-            "no_reprint",
-            "bonus",
-            "text",
-            "trait",
-            "capacity",
-            "set",
-            "sect",
-            "title",
-            "city",
-            "rarity",
-            "precon",
-            "artist",
-        }
-    }
-    exclude_set = set(args.pop("exclude_set", None) or [])
-    exclude_type = set(args.pop("exclude_type", None) or [])
-    if args.pop("no_reprint", None):
-        exclude_set |= {
-            "Anthology",
-            "Echoes of Gehenna",
-            "Fall of London",
-            "Fifth Edition",
-            "Fifth Edition (Anarch)",
-            "Fifth Edition (Companion)",
-            "First Blood",
-            "Heirs to the Blood Reprint",
-            "Keepers of Tradition Reprint",
-            "Lost Kindred",
-            "New Blood",
-            "New Blood II",
-            "Print on Demand",
-            "Sabbat Preconstructed",
-            "Shadows of Berlin",
-            "Twenty-Fifth Anniversary",
-        }
-    args["text"] = " ".join(args.pop("text") or [])
-    args = {k: v for k, v in args.items() if v}
-    ret = set(vtes.VTES.search(**args))
-    for exclude in exclude_type:
-        ret -= set(vtes.VTES.search(type=[exclude]))
-    for exclude in exclude_set:
-        ret -= set(vtes.VTES.search(set=[exclude]))
-    return ret
-
-
-def typical_copies(A, card, naked=False):
-    deviation = math.sqrt(A.variance[card])
-    min_copies = max(1, round(A.average[card] - deviation))
-    max_copies = max(1, round(A.average[card] + deviation))
-    if min_copies == max_copies:
-        ret = f"{min_copies}"
-    else:
-        ret = f"{min_copies}-{max_copies}"
-    if naked:
-        return ret
-    if max_copies > 1:
-        ret += " copies"
-    else:
-        ret += " copy"
-    return ret
-
-
-def card_text(card: krcg.cards.Card, krcg_format: bool) -> str:
-    """Full text of a card (id, title, traits, costs, ...) for display purposes"""
-    text = "[{}]".format("/".join(card.types))
-    if card.clans:
-        text += "[{}]".format("/".join(card.clans))
-    if card.pool_cost:
-        text += "[{}P]".format(card.pool_cost)
-    if card.blood_cost:
-        text += "[{}B]".format(card.blood_cost)
-    if card.conviction_cost:
-        text += "[{}C]".format(card.conviction_cost)
-    if card.capacity:
-        text += "[{}]".format(card.capacity)
-    if not krcg_format and card.group:
-        text += "(g.{})".format(card.group)
-    if card.burn_option:
-        text += "(Burn Option)"
-    if card.banned:
-        text += " -- BANNED in " + card["Banned"]
-    if not krcg_format:
-        text += " -- (#{})".format(card.id)
-    if card.crypt and card.disciplines:
-        text += "\n{}".format(" ".join(card.disciplines) or "-- No discipline")
-    text += "\n{}".format(card.card_text)
-    return text

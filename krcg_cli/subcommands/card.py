@@ -1,6 +1,6 @@
 import sys
 
-from krcg import vtes
+from krcg import models
 
 from . import _utils
 
@@ -26,7 +26,6 @@ def add_parser(parser):
 
 def card(args):
     """Display cards, their text and rulings"""
-    _utils._init()
     index = 0
     cards = args.cards
     if not cards and not sys.stdin.isatty():
@@ -50,36 +49,34 @@ def card(args):
 def _display_card(args, name: str, index: int = 0) -> None:
     if not args.short and index > 0:
         print()
-    try:
-        name = int(name)
-    except ValueError:
-        pass
-    card = vtes.VTES[name]
+    key: int | str = int(name) if name.isdigit() else name
+    card = _utils.get_cards()[key]
     if args.krcg:
-        print(f"{card.id}|{card.name}")
+        print(str(card))
     else:
-        print(card.usual_name)
+        print(card.unique_name)
+    translations = sorted(card.i18n.items())
     if args.international:
-        for lang, translation in card.i18n_variants("name"):
-            print(f"  {lang[:2]} -- {translation}")
+        for lang, translation in translations:
+            print(f"  {lang} -- {translation.name}")
     if args.short:
         return
     print(_utils.card_text(card, args.krcg))
     if args.international:
-        for lang, translation in card.i18n_variants("card_text"):
-            print(f"\n-- {lang[:2]}\n{translation}")
+        for lang, translation in translations:
+            print(f"\n-- {lang}\n{translation.text}")
     if args.text or not card.rulings:
         return
     print(_card_rulings(args, card))
 
 
-def _card_rulings(args, card):
+def _card_rulings(args, card: models.Card) -> str:
     """Text of a card's rulings"""
     text = "\n-- Rulings\n"
     for ruling in card.rulings:
-        text += ruling["text"] + "\n"
+        text += ruling.text + "\n"
         if args.links:
-            for ref in ruling["references"]:
-                text += f"{ref['label']}: {ref['url']}\n"
+            for reference in ruling.references:
+                text += f"{reference.label}: {reference.url}\n"
             text += "\n"
     return text[:-1]

@@ -1,0 +1,4 @@
+Card name,# decks,# copies
+"Valeriya Zinovieva",75,1-2
+"Atiena",73,1-2
+"Leumeah",65,1-3

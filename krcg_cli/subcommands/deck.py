@@ -1,8 +1,8 @@
+import datetime
 import sys
 
-from krcg import twda
+from krcg import providers
 from krcg import utils as krcg_utils
-from krcg import vtes
 
 from . import _utils
 
@@ -23,25 +23,32 @@ def add_parser(parser):
 
 
 def deck(args):
-    _utils._init(with_twda=True)
+    cards_db = _utils.get_cards()
+    archive = _utils.get_twda()
+    known_authors = {
+        krcg_utils.normalize(name)
+        for d in archive.values()
+        for name in (d.player, d.author)
+        if name
+    }
     filters = set(args.filter)
     joined_args = krcg_utils.normalize(" ".join(args.filter))
-    deck_ids = [i for i in args.filter if i in twda.TWDA]
+    deck_ids = [i for i in args.filter if i in archive]
     filters -= set(deck_ids)
-    cards = [vtes.VTES[c] for c in args.filter if c in vtes.VTES]
-    filters -= set(cards)
-    if joined_args in vtes.VTES:
-        cards.append(vtes.VTES[joined_args])
+    cards = [cards_db[c] for c in args.filter if c in cards_db]
+    filters -= {c for c in args.filter if c in cards_db}
+    if joined_args in cards_db:
+        cards.append(cards_db[joined_args])
         filters.clear()
     authors = [krcg_utils.normalize(a) for a in args.filter]
-    authors = [a for a in authors if a in twda.TWDA.by_author]
+    authors = [a for a in authors if a in known_authors]
     filters -= set(authors)
-    if joined_args in twda.TWDA.by_author:
+    if joined_args in known_authors:
         authors.append(joined_args)
         filters.clear()
     if filters:
         sys.stderr.write(
-            f"\"{' '.join(filters)}\" did not match a deck #, card or author"
+            f'"{" ".join(filters)}" did not match a deck #, card or author'
         )
         return 1
     decks = _utils.filter_twda(args)
@@ -50,7 +57,7 @@ def deck(args):
             d
             for d in decks
             if d.id in deck_ids
-            or (cards and all(c in d for c in cards))
+            or (cards and all(_utils.deck_plays(d, c) for c in cards))
             or krcg_utils.normalize(d.player) in authors
             or krcg_utils.normalize(d.author) in authors
         ]
@@ -58,11 +65,11 @@ def deck(args):
         args.full = True
     if not args.full:
         print(f"-- {len(decks)} decks --")
-
-    for d in sorted(decks, key=lambda a: a.date):
+    decks.sort(key=lambda d: _utils.deck_date(d) or datetime.date.min)
+    for d in decks:
         if args.full:
             print(f"[{d.id:<15}]===================================================")
-            print(d.to_txt())
+            print(providers.serialize_twd(d, cards_db))
         else:
-            print(f"[{d.id}] {d.name}")
+            print(f"[{d.id}] {d.name or None}")
     return 0

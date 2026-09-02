@@ -2,7 +2,7 @@
 
 [![PyPI version](https://badge.fury.io/py/krcg-cli.svg)](https://badge.fury.io/py/krcg-cli)
 [![Validation](https://github.com/lionel-panhaleux/krcg-cli/actions/workflows/validation.yml/badge.svg)](https://github.com/lionel-panhaleux/krcg-cli/actions/workflows/validation.yml)
-[![Python version](https://img.shields.io/badge/python-3.11-blue)](https://www.python.org/downloads/)
+[![Python version](https://img.shields.io/badge/python-3.14-blue)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/License-MIT-blue)](https://opensource.org/licenses/MIT)
 [![Code Style](https://img.shields.io/badge/code%20style-black-black)](https://github.com/psf/black)
 
@@ -19,17 +19,19 @@ For more information please visit [white-wolf.com](http://www.white-wolf.com).
 
 ## Install
 
-You need to have [Python 3](https://www.python.org) installed on your system.
-`krcg-cli` is a standard Python package, you can install it using `pip`:
+You need to have [Python 3.14+](https://www.python.org) installed on your system.
+`krcg-cli` is a standard Python package, you can install it using `pip`
+or, better, [uv](https://github.com/astral-sh/uv):
 
 ```bash
-pip install krcg-cli
+uv tool install krcg-cli
 ```
 
 ## Usage
 
-An internet connection is required to initialize krcg with official VEKN data
-(cards list and TWDA):
+The official VEKN data (cards list, rulings and TWDA) ships with the tool,
+so it works offline: upgrade to get fresher data. Only the `--price` option
+of the `top` command needs an internet connection.
 
 Use the help command for a full documentation of the tool:
 
@@ -50,6 +52,10 @@ krcg [COMMAND] --help
 This CLI is an offspring of the [KRCG](https://github.com/lionel-panhaleux/krcg)
 python package, so please refer to that repository for issues, discussions
 and contributions guidelines.
+
+Development uses [uv](https://github.com/astral-sh/uv) and
+[just](https://github.com/casey/just): `uv sync --group dev`, then `just test`.
+See [CLAUDE.md](CLAUDE.md) for the code layout and conventions.
 
 ## Examples
 
@@ -277,7 +283,8 @@ Carlton Van Wyk                (in 27% of decks, typically 1 copy)
 Bum's Rush                     (in 27% of decks, typically 1-8 copies)
 ```
 
-List most played cards of a given type, clan or discipline:
+List most played cards of a given type, clan or discipline
+(`--price` adds the secondary market price, `--no-reprint` filters out cards in print):
 
 ```bash
 $ krcg top -d ani

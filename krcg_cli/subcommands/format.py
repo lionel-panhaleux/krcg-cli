@@ -1,8 +1,14 @@
-import argparse
-import json
+import contextlib
+import pathlib
 import sys
 
-from krcg import deck
+import msgspec
+
+from krcg import parser as krcg_parser
+from krcg import providers
+from krcg import utils as krcg_utils
+
+from . import _utils
 
 
 def add_parser(parser):
@@ -18,20 +24,31 @@ def add_parser(parser):
     parser.add_argument(
         "infile",
         nargs="?",
-        type=argparse.FileType("r"),
-        default=sys.stdin,
+        type=pathlib.Path,
         help="Input file. If not provided, read from standard input (stdin)",
     )
     parser.set_defaults(func=format)
 
 
 def format(args):
-    d = None
+    cards_db = _utils.get_cards()
     try:
-        d = deck.Deck.from_txt(args.infile)
+        with contextlib.ExitStack() as stack:
+            source = (
+                stack.enter_context(args.infile.open()) if args.infile else sys.stdin
+            )
+            deck = krcg_parser.deck_from_txt(source, cards_db)
     except Exception as e:
-        sys.stderr.write(f"Failed to parse decklist: {e}")
-    if args.format == "json":
-        json.dump(d.to_json(), sys.stdout, ensure_ascii=False, indent=2)
-    else:
-        print(d.to_txt(format=args.format))
+        sys.stderr.write(f"Failed to parse decklist: {e}\n")
+        return 1
+    krcg_utils.sort_cards(deck)
+    match args.format:
+        case "json":
+            print(msgspec.json.format(msgspec.json.encode(deck), indent=2).decode())
+        case "twd":
+            print(providers.serialize_twd(deck, cards_db))
+        case "lackey":
+            print(providers.serialize_lackey(deck))
+        case "jol":
+            print(providers.serialize_jol(deck))
+    return 0

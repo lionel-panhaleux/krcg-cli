@@ -1,0 +1,7 @@
+KRCG News Radio
+[Master][2P] -- (#101067)
+Unique location.
+You can lock this card to give a minion you control +1 intercept. You can lock this card and burn 1 pool to give a minion controlled by another Methuselah +1 intercept.
+
+-- Rulings
+Sequencing rules apply. You must gain the impulse to be able to use the reaction, or use the effect (whichever is applicable).  Other Methuselahs must declare block attempts (or not) and pass the impulse to you as normal. [ANK 20200607]

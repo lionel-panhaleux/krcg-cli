@@ -2,13 +2,15 @@
 __pycache__/
 build/
 dist/
-venv/
+.venv/
 *.egg-info/
-*.pkl
 
 # test
 .pytest_cache/
 .ruff_cache/
+
+# secrets
+.pypi_token
 
 # editors & OS
 .vscode/

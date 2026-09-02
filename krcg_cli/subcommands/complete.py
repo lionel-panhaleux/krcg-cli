@@ -1,7 +1,5 @@
 import sys
 
-from krcg import vtes
-
 from . import _utils
 
 
@@ -13,10 +11,13 @@ def add_parser(parser):
 
 
 def complete(args):
-    _utils._init()
-    completions = vtes.VTES.complete(args.name)
+    completions = _utils.get_cards().complete(args.name)
     if not completions:
         sys.stderr.write("No match\n")
         return 1
-    print("\n".join(completions))
+    for card in completions:
+        print(card.unique_name)
+        if args.full:
+            print(_utils.card_text(card, False))
+            print()
     return 0

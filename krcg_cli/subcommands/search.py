@@ -1,11 +1,9 @@
 import sys
 
-
 from . import _utils
 
 
 def add_parser(parser):
-    _utils._init()
     parser = parser.add_parser("search", help="search card")
     parser.add_argument(
         "-n",
@@ -23,7 +21,7 @@ def search(args):
     if not results:
         sys.stderr.write("No match\n")
         return 1
-    results = sorted(c.usual_name for c in results)
+    results = sorted(c.unique_name for c in results)
     if args.number and args.number < len(results):
         full = len(results)
         results = results[: args.number]

@@ -1,9 +1,9 @@
-from krcg_cli.parser import execute as cli_execute
+import pytest
 
 
-def test(capsys):
-    cli_execute(["twd", "--from", "2012", "--to", "2013"])
-    outerr = capsys.readouterr()
-    assert outerr.err == ""
-    assert outerr.out
-    # TODO test for real when output gets stable
+@pytest.mark.baseline
+def test(cli, snapshot):
+    code, out, err = cli("twd", "--from", "2012", "--to", "2013")
+    assert code == 0
+    assert err == ""
+    snapshot("twd-2012", out)

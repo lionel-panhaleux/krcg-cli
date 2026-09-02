@@ -1,7 +1,7 @@
 import sys
 
 from krcg import analyzer
-from krcg import vtes
+from krcg import providers
 
 from . import _utils
 
@@ -17,10 +17,16 @@ def add_parser(parser):
 
 def build(args):
     decks = _utils.filter_twda(args)
+    cards_db = _utils.get_cards()
     try:
-        cards = [vtes.VTES[name] for name in args.cards]
+        cards = [cards_db[name] for name in args.cards]
     except KeyError as e:
         sys.stderr.write(f"Card not found: {e.args[0]}\n")
         return 1
-    print(analyzer.Analyzer(decks).build_deck(*cards).to_txt())
+    try:
+        deck = analyzer.build_deck(decks, cards_db, *cards)
+    except analyzer.AnalysisError as e:
+        sys.stderr.write(f"Cannot build a deck: {e}\n")
+        return 1
+    print(providers.serialize_twd(deck, cards_db))
     return 0

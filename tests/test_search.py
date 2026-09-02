@@ -1,90 +1,33 @@
-from krcg_cli.parser import execute as cli_execute
+import pytest
 
 
-def test(capsys):
-    cli_execute(["search", "--text", "Pentex"])
-    outerr = capsys.readouterr()
-    assert outerr.err == ""
-    assert (
-        outerr.out
-        == """Enzo Giovanni, Pentex Board of Directors
-Enzo Giovanni, Pentex Board of Directors (ADV)
-Harold Zettler, Pentex Director
-Pentex™ Loves You!
-Pentex™ Subversion
-"""
-    )
-    cli_execute(["search", "--city", "chicago"])
-    outerr = capsys.readouterr()
-    assert outerr.err == ""
-    assert (
-        outerr.out
-        == """Antón de Concepción
-Crusade: Chicago
-Horatio Ballard
-Kevin Jackson
-Lachlan, Noddist
-Lodin (Olaf Holte)
-Maldavis (ADV)
-Maxwell
-Praxis Seizure: Chicago
-Sir Walter Nash
-"""
-    )
-    cli_execute(["search", "--title", "imperator"])
-    outerr = capsys.readouterr()
-    assert outerr.err == ""
-    assert (
-        outerr.out
-        == """Imperator
-Karsh (ADV)
-National Guard Support
-Persona Non Grata
-Reinforcements
-Rubicon
-Scourge
-"""
-    )
-    cli_execute(["search", "--title", "primogen", "-d", "ser"])
-    outerr = capsys.readouterr()
-    assert outerr.err == ""
-    assert outerr.out == "Amenophobis\n"
-    cli_execute(["search", "--bonus", "stealth", "votes"])
-    outerr = capsys.readouterr()
-    assert outerr.err == ""
-    assert (
-        outerr.out
-        == """Antonio Veradas
-Bulscu (ADV)
-Dark Selina
-Jessica (ADV)
-Joseph Cambridge
-Karen Suadela
-Loki's Gift
-Maila
-Maxwell
-Natasha Volfchek
-... 4 more results, use -n 14 to display them.
-"""
-    )
-    cli_execute(["search", "--bonus", "stealth", "votes", "-n", "14"])
-    outerr = capsys.readouterr()
-    assert outerr.err == ""
-    assert (
-        outerr.out
-        == """Antonio Veradas
-Bulscu (ADV)
-Dark Selina
-Jessica (ADV)
-Joseph Cambridge
-Karen Suadela
-Loki's Gift
-Maila
-Maxwell
-Natasha Volfchek
-Perfect Paragon
-Sela (ADV)
-Suhailah
-Zayyat, The Sandstorm
-"""
-    )
+@pytest.mark.baseline
+def test(cli, snapshot):
+    for name, args in {
+        "search-text-pentex": ["--text", "Pentex"],
+        "search-city-chicago": ["--city", "chicago"],
+        "search-title-imperator": ["--title", "imperator"],
+        "search-title-primogen-ser": ["--title", "primogen", "-d", "ser"],
+        "search-bonus-stealth-votes": ["--bonus", "stealth", "votes"],
+        "search-bonus-stealth-votes-all": ["--bonus", "stealth", "votes", "-n", "0"],
+        "search-set-black-hand": ["--set", "Black Hand", "-n", "5"],
+        "search-no-reprint-master": ["--no-reprint", "-t", "master", "-n", "5"],
+    }.items():
+        code, out, err = cli("search", *args)
+        assert code == 0, name
+        assert err == "", name
+        snapshot(name, out)
+
+
+def test_filters(cli):
+    # sets are accepted by name or code, case-insensitive
+    by_name = cli("search", "--set", "black hand", "-n", "0")
+    assert by_name[0] == 0
+    assert by_name == cli("search", "--set", "BH", "-n", "0")
+    # groups are accepted as bare numbers
+    assert cli("search", "-g", "4", "-n", "0") == cli("search", "-g", "G4", "-n", "0")
+    # --no-reprint excludes cards from sets in print
+    assert cli("search", "--set", "V5", "--no-reprint") == (1, "", "No match\n")
+    # invalid choices are reported
+    with pytest.raises(SystemExit):
+        cli("search", "--clan", "foobar")

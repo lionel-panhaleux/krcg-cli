@@ -1,0 +1,18 @@
+.44 Magnum
+  es -- Magnum .44
+  fr -- Magnum .44
+[Equipment][2P] -- (#100001)
+Weapon: gun.
+Strike: 2R damage, with 1 optional maneuver each combat.
+
+-- es
+Arma: arma de fuego.
+Ataque: 2 de daño a distancia, con una maniobra opcional por combate.
+
+-- fr
+Arme à feu.
+Frapper à toute portée : 2 points de dégâts, avec 1 manœuvre optionnelle durant chaque combat.
+
+-- Rulings
+Provides only one maneuver each combat, even if the bearer changes. [LSJ 19980302-2]
+The optional maneuver cannot be used if the strike cannot be used (eg. {Hidden Lurker}). [LSJ 20021028]

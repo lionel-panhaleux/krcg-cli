@@ -1,0 +1,504 @@
+{
+  "id": "",
+  "name": "",
+  "cards": [
+    {
+      "id": 200161,
+      "printed_name": "Badr al-Budur",
+      "unicity_suffix": "",
+      "suffix": "G2",
+      "count": 1,
+      "kind": "Crypt",
+      "types": [
+        "Vampire"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 200173,
+      "printed_name": "Basil",
+      "unicity_suffix": "",
+      "suffix": "G2",
+      "count": 1,
+      "kind": "Crypt",
+      "types": [
+        "Vampire"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 200295,
+      "printed_name": "Count Ormonde",
+      "unicity_suffix": "",
+      "suffix": "G2",
+      "count": 1,
+      "kind": "Crypt",
+      "types": [
+        "Vampire"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 200343,
+      "printed_name": "Didi Meyers",
+      "unicity_suffix": "",
+      "suffix": "G1",
+      "count": 1,
+      "kind": "Crypt",
+      "types": [
+        "Vampire"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 200346,
+      "printed_name": "Dimple",
+      "unicity_suffix": "",
+      "suffix": "G1",
+      "count": 1,
+      "kind": "Crypt",
+      "types": [
+        "Vampire"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 200517,
+      "printed_name": "Gilbert Duane",
+      "unicity_suffix": "G1",
+      "suffix": "G1",
+      "count": 1,
+      "kind": "Crypt",
+      "types": [
+        "Vampire"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 200929,
+      "printed_name": "Mariel, Lady Thunder",
+      "unicity_suffix": "",
+      "suffix": "G1",
+      "count": 1,
+      "kind": "Crypt",
+      "types": [
+        "Vampire"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 201027,
+      "printed_name": "Mustafa Rahman",
+      "unicity_suffix": "",
+      "suffix": "G2",
+      "count": 1,
+      "kind": "Crypt",
+      "types": [
+        "Vampire"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 201065,
+      "printed_name": "Normal",
+      "unicity_suffix": "",
+      "suffix": "G1",
+      "count": 1,
+      "kind": "Crypt",
+      "types": [
+        "Vampire"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 201073,
+      "printed_name": "Ohanna",
+      "unicity_suffix": "",
+      "suffix": "G2",
+      "count": 1,
+      "kind": "Crypt",
+      "types": [
+        "Vampire"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 201231,
+      "printed_name": "Samson",
+      "unicity_suffix": "",
+      "suffix": "G2",
+      "count": 1,
+      "kind": "Crypt",
+      "types": [
+        "Vampire"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 201503,
+      "printed_name": "Zebulon",
+      "unicity_suffix": "",
+      "suffix": "G1",
+      "count": 1,
+      "kind": "Crypt",
+      "types": [
+        "Vampire"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 100298,
+      "printed_name": "Carlton Van Wyk",
+      "unicity_suffix": "",
+      "suffix": "",
+      "count": 1,
+      "kind": "Library",
+      "types": [
+        "Ally"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 100327,
+      "printed_name": "Channel 10",
+      "unicity_suffix": "",
+      "suffix": "",
+      "count": 1,
+      "kind": "Library",
+      "types": [
+        "Master"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 100332,
+      "printed_name": "Charisma",
+      "unicity_suffix": "",
+      "suffix": "",
+      "count": 2,
+      "kind": "Library",
+      "types": [
+        "Master"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 100362,
+      "printed_name": "Cloak the Gathering",
+      "unicity_suffix": "",
+      "suffix": "",
+      "count": 6,
+      "kind": "Library",
+      "types": [
+        "Action Modifier"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 100392,
+      "printed_name": "Concealed Weapon",
+      "unicity_suffix": "",
+      "suffix": "",
+      "count": 8,
+      "kind": "Library",
+      "types": [
+        "Combat"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 100401,
+      "printed_name": "Conditioning",
+      "unicity_suffix": "",
+      "suffix": "",
+      "count": 7,
+      "kind": "Library",
+      "types": [
+        "Action Modifier"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 100444,
+      "printed_name": "Creepshow Casino",
+      "unicity_suffix": "",
+      "suffix": "",
+      "count": 1,
+      "kind": "Library",
+      "types": [
+        "Master"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 100516,
+      "printed_name": "Deer Rifle",
+      "unicity_suffix": "",
+      "suffix": "",
+      "count": 1,
+      "kind": "Library",
+      "types": [
+        "Equipment"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 100518,
+      "printed_name": "Deflection",
+      "unicity_suffix": "",
+      "suffix": "",
+      "count": 7,
+      "kind": "Library",
+      "types": [
+        "Reaction"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 100519,
+      "printed_name": "Delaying Tactics",
+      "unicity_suffix": "",
+      "suffix": "",
+      "count": 2,
+      "kind": "Library",
+      "types": [
+        "Reaction"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 100709,
+      "printed_name": "FBI Special Affairs Division",
+      "unicity_suffix": "",
+      "suffix": "",
+      "count": 1,
+      "kind": "Library",
+      "types": [
+        "Event"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 100745,
+      "printed_name": "Flash Grenade",
+      "unicity_suffix": "",
+      "suffix": "",
+      "count": 8,
+      "kind": "Library",
+      "types": [
+        "Equipment"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 100855,
+      "printed_name": "Gregory Winter",
+      "unicity_suffix": "",
+      "suffix": "",
+      "count": 1,
+      "kind": "Library",
+      "types": [
+        "Ally"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 100944,
+      "printed_name": "Hunger Moon",
+      "unicity_suffix": "",
+      "suffix": "",
+      "count": 1,
+      "kind": "Library",
+      "types": [
+        "Event"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 100966,
+      "printed_name": "Impundulu",
+      "unicity_suffix": "",
+      "suffix": "",
+      "count": 1,
+      "kind": "Library",
+      "types": [
+        "Ally"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 101067,
+      "printed_name": "KRCG News Radio",
+      "unicity_suffix": "",
+      "suffix": "",
+      "count": 1,
+      "kind": "Library",
+      "types": [
+        "Master"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 101125,
+      "printed_name": "Lost in Crowds",
+      "unicity_suffix": "",
+      "suffix": "",
+      "count": 2,
+      "kind": "Library",
+      "types": [
+        "Action Modifier"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 101250,
+      "printed_name": "Muddled Vampire Hunter",
+      "unicity_suffix": "",
+      "suffix": "",
+      "count": 1,
+      "kind": "Library",
+      "types": [
+        "Ally"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 101321,
+      "printed_name": "On the Qui Vive",
+      "unicity_suffix": "",
+      "suffix": "",
+      "count": 7,
+      "kind": "Library",
+      "types": [
+        "Reaction"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 101333,
+      "printed_name": "Ossian",
+      "unicity_suffix": "",
+      "suffix": "",
+      "count": 1,
+      "kind": "Library",
+      "types": [
+        "Ally"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 101388,
+      "printed_name": "Perfectionist",
+      "unicity_suffix": "",
+      "suffix": "",
+      "count": 2,
+      "kind": "Library",
+      "types": [
+        "Master"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 101491,
+      "printed_name": "Procurer",
+      "unicity_suffix": "",
+      "suffix": "",
+      "count": 6,
+      "kind": "Library",
+      "types": [
+        "Ally"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 101614,
+      "printed_name": "Restricted Vitae",
+      "unicity_suffix": "",
+      "suffix": "",
+      "count": 1,
+      "kind": "Library",
+      "types": [
+        "Event"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 101877,
+      "printed_name": "Storage Annex",
+      "unicity_suffix": "",
+      "suffix": "",
+      "count": 6,
+      "kind": "Library",
+      "types": [
+        "Master"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 101896,
+      "printed_name": "Sudden Reversal",
+      "unicity_suffix": "",
+      "suffix": "",
+      "count": 3,
+      "kind": "Library",
+      "types": [
+        "Master"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 102079,
+      "printed_name": "The Unmasking",
+      "unicity_suffix": "",
+      "suffix": "",
+      "count": 1,
+      "kind": "Library",
+      "types": [
+        "Event"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 102097,
+      "printed_name": "Veil the Legions",
+      "unicity_suffix": "",
+      "suffix": "",
+      "count": 4,
+      "kind": "Library",
+      "types": [
+        "Action Modifier"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 102113,
+      "printed_name": "Vessel",
+      "unicity_suffix": "",
+      "suffix": "",
+      "count": 3,
+      "kind": "Library",
+      "types": [
+        "Master"
+      ],
+      "comment": ""
+    },
+    {
+      "id": 102202,
+      "printed_name": "Young Bloods",
+      "unicity_suffix": "",
+      "suffix": "",
+      "count": 1,
+      "kind": "Library",
+      "types": [
+        "Ally"
+      ],
+      "comment": ""
+    }
+  ],
+  "comment": "",
+  "author": "",
+  "event": null,
+  "player": "",
+  "score": null,
+  "raven": 0
+}

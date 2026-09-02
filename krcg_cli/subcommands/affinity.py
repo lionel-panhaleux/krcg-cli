@@ -1,13 +1,11 @@
 import sys
 
 from krcg import analyzer
-from krcg import vtes
 
 from . import _utils
 
 
 def add_parser(parser):
-    _utils._init()
     parser = parser.add_parser(
         "affinity", help="display cards affinity (most played together)"
     )
@@ -24,29 +22,34 @@ def add_parser(parser):
 
 def affinity(args):
     decks = _utils.filter_twda(args)
+    cards_db = _utils.get_cards()
     try:
-        cards = [vtes.VTES[name] for name in args.cards]
+        cards = [cards_db[name] for name in args.cards]
     except KeyError as e:
         sys.stderr.write(f"Card not found: {e.args[0]}\n")
         return 1
-    A = analyzer.Analyzer(decks)
-    A.refresh(*cards, similarity=1)
-    if len(A.examples) < 4:
+    examples = [d for d in decks if all(_utils.deck_plays(d, c) for c in cards)]
+    if len(examples) < 4:
         print("Too few example in TWDA.")
-        if len(A.examples) > 0:
+        if len(examples) > 0:
             print(
                 "To see them:\n\tkrcg deck "
-                + " ".join('"' + card.usual_name + '"' for card in cards)
+                + " ".join('"' + card.unique_name + '"' for card in cards)
             )
         return 0
+    stats = analyzer.stats(examples, cards_db)
     # do not include spoilers if affinity is within 50% of natural occurence
-    candidates = A.candidates(*cards, spoiler_multiplier=1.5)
-    for card, score in candidates:
-        score = round(score * 100 / len(cards))
+    played = analyzer.played(decks, cards_db)
+    spoilers = {c: n / len(decks) for c, n in played.items() if n > len(decks) / 4}
+    for card, score in analyzer.affinity(decks, cards_db, *cards, similarity=1):
+        score = score / len(cards)
+        if card in spoilers and score < spoilers[card] * 1.5:
+            continue
+        score = round(score * 100)
         if args.min > score:
             break
         print(
-            f"{card.usual_name:<30} (in {score:.0f}% of decks, typically "
-            f"{_utils.typical_copies(A, card)})"
+            f"{card.unique_name:<30} (in {score:.0f}% of decks, typically "
+            f"{_utils.typical_copies(stats, card)})"
         )
     return 0

@@ -106,7 +106,7 @@ def test_add_remove(capsys):
 
 def test_simple_scoring():
     result = local_execute(
-        "seating -vi 0 -p " "1,2,3,4,5,6,7,8,9 2,5,7,1,8,9,4,6,3 4,1,9,7,2,8,3,5,6"
+        "seating -vi 0 -p 1,2,3,4,5,6,7,8,9 2,5,7,1,8,9,4,6,3 4,1,9,7,2,8,3,5,6"
     )
     assert result == (
         "1,2,3,4,5,6,7,8,9\n"

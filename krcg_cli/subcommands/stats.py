@@ -2,10 +2,11 @@ import collections
 import functools
 import pathlib
 import re
-from typing import Iterable
+from collections.abc import Iterable
 
 from krcg import analyzer
-from krcg import deck
+from krcg import models
+from krcg import parser as krcg_parser
 
 from . import _utils
 
@@ -22,9 +23,29 @@ def add_parser(parser):
     parser.set_defaults(func=stats)
 
 
+def _is_library(card: models.Card) -> bool:
+    return card.kind == models.Card.Kind.LIBRARY
+
+
+def _has_discipline(card: models.Card, trigram: str) -> bool:
+    return (
+        isinstance(card, models.LibraryCard)
+        and card.discipline_requirement is not None
+        and trigram in card.discipline_requirement.disciplines
+    )
+
+
+def _clans(card: models.Card) -> list[str]:
+    if isinstance(card, models.CryptCard):
+        return [card.clan] if card.clan else []
+    if isinstance(card, models.LibraryCard):
+        return card.clan_requirement
+    return []
+
+
 FILTERS = {
-    "Library": lambda c: c.library,
-    "Crypt": lambda c: c.crypt,
+    "Library": _is_library,
+    "Crypt": lambda c: c.kind == models.Card.Kind.CRYPT,
     "Action": lambda c: "Action" in c.types,
     "Action Modifier": lambda c: "Action Modifier" in c.types,
     "Ally": lambda c: "Ally" in c.types,
@@ -37,76 +58,76 @@ FILTERS = {
     "Retainer": lambda c: "Retainer" in c.types,
 }
 DISCIPLINES = {
-    "Abombwe": lambda c: c.library and {"abo", "ABO"} & set(c.disciplines),
-    "Animalism": lambda c: c.library and {"ani", "ANI"} & set(c.disciplines),
-    "Auspex": lambda c: c.library and {"aus", "AUS"} & set(c.disciplines),
-    "Blood Sorcery": lambda c: c.library and {"tha", "THA"} & set(c.disciplines),
-    "Celerity": lambda c: c.library and {"cel", "CEL"} & set(c.disciplines),
-    "Chimerstry": lambda c: c.library and {"chi", "CHI"} & set(c.disciplines),
-    "Daimonon": lambda c: c.library and {"dai", "DAI"} & set(c.disciplines),
-    "Dementation": lambda c: c.library and {"dem", "DEM"} & set(c.disciplines),
-    "Dominate": lambda c: c.library and {"dom", "DOM"} & set(c.disciplines),
-    "Fortitude": lambda c: c.library and {"for", "FOR"} & set(c.disciplines),
-    "Melpominee": lambda c: c.library and {"mel", "MEL"} & set(c.disciplines),
-    "Mytherceria": lambda c: c.library and {"myt", "MYT"} & set(c.disciplines),
-    "Necromancy": lambda c: c.library and {"nec", "NEC"} & set(c.disciplines),
-    "Obeah": lambda c: c.library and {"obe", "OBE"} & set(c.disciplines),
-    "Obfuscate": lambda c: c.library and {"obf", "OBF"} & set(c.disciplines),
-    "Obtenebration": lambda c: c.library and {"obt", "OBT"} & set(c.disciplines),
-    "Potence": lambda c: c.library and {"pot", "POT"} & set(c.disciplines),
-    "Presence": lambda c: c.library and {"pre", "PRE"} & set(c.disciplines),
-    "Protean": lambda c: c.library and {"pro", "PRO"} & set(c.disciplines),
-    "Quietus": lambda c: c.library and {"qui", "QUI"} & set(c.disciplines),
-    "Sanguinus": lambda c: c.library and {"san", "SAN"} & set(c.disciplines),
-    "Serpentis": lambda c: c.library and {"ser", "SER"} & set(c.disciplines),
-    "Spiritus": lambda c: c.library and {"spi", "SPI"} & set(c.disciplines),
-    "Temporis": lambda c: c.library and {"tem", "TEM"} & set(c.disciplines),
-    "Thanatosis": lambda c: c.library and {"thn", "THN"} & set(c.disciplines),
-    "Valeren": lambda c: c.library and {"val", "VAL"} & set(c.disciplines),
-    "Vicissitude": lambda c: c.library and {"vic", "VIC"} & set(c.disciplines),
-    "Visceratika": lambda c: c.library and {"vis", "VIS"} & set(c.disciplines),
+    "Abombwe": functools.partial(_has_discipline, trigram="abo"),
+    "Animalism": functools.partial(_has_discipline, trigram="ani"),
+    "Auspex": functools.partial(_has_discipline, trigram="aus"),
+    "Blood Sorcery": functools.partial(_has_discipline, trigram="tha"),
+    "Celerity": functools.partial(_has_discipline, trigram="cel"),
+    "Chimerstry": functools.partial(_has_discipline, trigram="chi"),
+    "Daimonon": functools.partial(_has_discipline, trigram="dai"),
+    "Dementation": functools.partial(_has_discipline, trigram="dem"),
+    "Dominate": functools.partial(_has_discipline, trigram="dom"),
+    "Fortitude": functools.partial(_has_discipline, trigram="for"),
+    "Melpominee": functools.partial(_has_discipline, trigram="mel"),
+    "Mytherceria": functools.partial(_has_discipline, trigram="myt"),
+    "Necromancy": functools.partial(_has_discipline, trigram="nec"),
+    "Obeah": functools.partial(_has_discipline, trigram="obe"),
+    "Obfuscate": functools.partial(_has_discipline, trigram="obf"),
+    "Obtenebration": functools.partial(_has_discipline, trigram="obt"),
+    "Potence": functools.partial(_has_discipline, trigram="pot"),
+    "Presence": functools.partial(_has_discipline, trigram="pre"),
+    "Protean": functools.partial(_has_discipline, trigram="pro"),
+    "Quietus": functools.partial(_has_discipline, trigram="qui"),
+    "Sanguinus": functools.partial(_has_discipline, trigram="san"),
+    "Serpentis": functools.partial(_has_discipline, trigram="ser"),
+    "Spiritus": functools.partial(_has_discipline, trigram="spi"),
+    "Temporis": functools.partial(_has_discipline, trigram="tem"),
+    "Thanatosis": functools.partial(_has_discipline, trigram="thn"),
+    "Valeren": functools.partial(_has_discipline, trigram="val"),
+    "Vicissitude": functools.partial(_has_discipline, trigram="vic"),
+    "Visceratika": functools.partial(_has_discipline, trigram="vis"),
 }
 CLANS = {
-    "Abomination": lambda c: "Abomination" in c.clans,
-    "Ahrimane": lambda c: "Ahrimane" in c.clans,
-    "Akunanse": lambda c: "Akunanse" in c.clans,
-    "Avenger": lambda c: "Avenger" in c.clans,
-    "Baali": lambda c: "Baali" in c.clans,
-    "Banu Haqim": lambda c: "Banu Haqim" in c.clans,
-    "Blood Brother": lambda c: "Blood Brother" in c.clans,
-    "Brujah": lambda c: "Brujah" in c.clans,
-    "Brujah antitribu": lambda c: "Brujah antitribu" in c.clans,
-    "Caitiff": lambda c: "Caitiff" in c.clans,
-    "Daughter of Cacophony": lambda c: "Daughter of Cacophony" in c.clans,
-    "Gangrel": lambda c: "Gangrel" in c.clans,
-    "Gangrel antitribu": lambda c: "Gangrel antitribu" in c.clans,
-    "Gargoyle": lambda c: "Gargoyle" in c.clans,
-    "Giovanni": lambda c: "Giovanni" in c.clans,
-    "Guruhi": lambda c: "Guruhi" in c.clans,
-    "Harbinger of Skulls": lambda c: "Harbinger of Skulls" in c.clans,
-    "Ishtarri": lambda c: "Ishtarri" in c.clans,
-    "Kiasyd": lambda c: "Kiasyd" in c.clans,
-    "Lasombra": lambda c: "Lasombra" in c.clans,
-    "Malkavian": lambda c: "Malkavian" in c.clans,
-    "Malkavian antitribu": lambda c: "Malkavian antitribu" in c.clans,
-    "Ministry": lambda c: "Ministry" in c.clans,
-    "Nagaraja": lambda c: "Nagaraja" in c.clans,
-    "Nosferatu": lambda c: "Nosferatu" in c.clans,
-    "Nosferatu antitribu": lambda c: "Nosferatu antitribu" in c.clans,
-    "Osebo": lambda c: "Osebo" in c.clans,
-    "Pander": lambda c: "Pander" in c.clans,
-    "Ravnos": lambda c: "Ravnos" in c.clans,
-    "Salubri": lambda c: "Salubri" in c.clans,
-    "Salubri antitribu": lambda c: "Salubri antitribu" in c.clans,
-    "Samedi": lambda c: "Samedi" in c.clans,
-    "Toreador": lambda c: "Toreador" in c.clans,
-    "Toreador antitribu": lambda c: "Toreador antitribu" in c.clans,
-    "Tremere": lambda c: "Tremere" in c.clans,
-    "Tremere antitribu": lambda c: "Tremere antitribu" in c.clans,
-    "True Brujah": lambda c: "True Brujah" in c.clans,
-    "Tzimisce": lambda c: "Tzimisce" in c.clans,
-    "Ventrue": lambda c: "Ventrue" in c.clans,
-    "Ventrue antitribu": lambda c: "Ventrue antitribu" in c.clans,
+    "Abomination": lambda c, clan="Abomination": clan in _clans(c),
+    "Ahrimane": lambda c, clan="Ahrimane": clan in _clans(c),
+    "Akunanse": lambda c, clan="Akunanse": clan in _clans(c),
+    "Avenger": lambda c, clan="Avenger": clan in _clans(c),
+    "Baali": lambda c, clan="Baali": clan in _clans(c),
+    "Banu Haqim": lambda c, clan="Banu Haqim": clan in _clans(c),
+    "Blood Brother": lambda c, clan="Blood Brother": clan in _clans(c),
+    "Brujah": lambda c, clan="Brujah": clan in _clans(c),
+    "Brujah antitribu": lambda c, clan="Brujah antitribu": clan in _clans(c),
+    "Caitiff": lambda c, clan="Caitiff": clan in _clans(c),
+    "Daughter of Cacophony": lambda c, clan="Daughter of Cacophony": clan in _clans(c),
+    "Gangrel": lambda c, clan="Gangrel": clan in _clans(c),
+    "Gangrel antitribu": lambda c, clan="Gangrel antitribu": clan in _clans(c),
+    "Gargoyle": lambda c, clan="Gargoyle": clan in _clans(c),
+    "Giovanni": lambda c, clan="Giovanni": clan in _clans(c),
+    "Guruhi": lambda c, clan="Guruhi": clan in _clans(c),
+    "Harbinger of Skulls": lambda c, clan="Harbinger of Skulls": clan in _clans(c),
+    "Ishtarri": lambda c, clan="Ishtarri": clan in _clans(c),
+    "Kiasyd": lambda c, clan="Kiasyd": clan in _clans(c),
+    "Lasombra": lambda c, clan="Lasombra": clan in _clans(c),
+    "Malkavian": lambda c, clan="Malkavian": clan in _clans(c),
+    "Malkavian antitribu": lambda c, clan="Malkavian antitribu": clan in _clans(c),
+    "Ministry": lambda c, clan="Ministry": clan in _clans(c),
+    "Nagaraja": lambda c, clan="Nagaraja": clan in _clans(c),
+    "Nosferatu": lambda c, clan="Nosferatu": clan in _clans(c),
+    "Nosferatu antitribu": lambda c, clan="Nosferatu antitribu": clan in _clans(c),
+    "Osebo": lambda c, clan="Osebo": clan in _clans(c),
+    "Pander": lambda c, clan="Pander": clan in _clans(c),
+    "Ravnos": lambda c, clan="Ravnos": clan in _clans(c),
+    "Salubri": lambda c, clan="Salubri": clan in _clans(c),
+    "Salubri antitribu": lambda c, clan="Salubri antitribu": clan in _clans(c),
+    "Samedi": lambda c, clan="Samedi": clan in _clans(c),
+    "Toreador": lambda c, clan="Toreador": clan in _clans(c),
+    "Toreador antitribu": lambda c, clan="Toreador antitribu": clan in _clans(c),
+    "Tremere": lambda c, clan="Tremere": clan in _clans(c),
+    "Tremere antitribu": lambda c, clan="Tremere antitribu": clan in _clans(c),
+    "True Brujah": lambda c, clan="True Brujah": clan in _clans(c),
+    "Tzimisce": lambda c, clan="Tzimisce": clan in _clans(c),
+    "Ventrue": lambda c, clan="Ventrue": clan in _clans(c),
+    "Ventrue antitribu": lambda c, clan="Ventrue antitribu": clan in _clans(c),
 }
 FILTERS.update(DISCIPLINES)
 FILTERS.update(CLANS)
@@ -136,6 +157,11 @@ class Score:
         return self
 
 
+def _matching(deck: models.Deck, condition) -> int:
+    """Number of distinct cards of the deck matching the condition."""
+    return sum(1 for card, _ in _utils.deck_cards(deck) if condition(card))
+
+
 def ranking(it: Iterable):
     rank, last_score = 0, None
     for i, (c, score) in enumerate(it, 1):
@@ -154,43 +180,45 @@ def trend(upheaval_score):
 
 
 def stats(args):
+    cards_db = _utils.get_cards()
     if args.folder:
-        _utils._init(with_twda=False)
-        decks = [deck.Deck.from_txt(f.open()) for f in args.folder.glob("*.txt")]
+        decks = [
+            krcg_parser.deck_from_txt(f.open(), cards_db)
+            for f in sorted(args.folder.glob("*.txt"))
+        ]
     else:
-        _utils._init(with_twda=True)
         decks = _utils.filter_twda(args)
-    A = analyzer.Analyzer(decks, spoilers=False)
-    A.refresh()
-    most_common = A.played.most_common()
-    for dek in decks:
+    played = analyzer.played(decks, cards_db)
+    card_stats = analyzer.stats(decks, cards_db)
+    most_common = played.most_common()
+    scores: dict[int, Score] = {}
+    for index, dek in enumerate(decks):
         if dek.score:
-            dek.score = Score(
-                gw=int(dek.score.game_wins or 0),
-                vp=float(dek.score.round_vps or 0) + float(dek.score.finals_vps or 0),
+            scores[index] = Score(
+                gw=dek.score.round_gw, vp=dek.score.round_vp + dek.score.finals_vp
             )
             continue
         match = re.search(
             r"(?P<gw>\d)\s*GW\s*(?P<vp>\d+)((\.|,)(?P<vp_frac>\d))?",
-            dek.comments or "" if args.folder else "",
+            dek.comment if args.folder else "",
             re.MULTILINE,
         )
         if match:
-            dek.score = Score(
+            scores[index] = Score(
                 gw=int(match.group("gw")),
                 vp=int(match.group("vp")) + int(match.group("vp_frac") or 0) / 10,
             )
         else:
-            dek.score = Score()
+            scores[index] = Score()
     cards_score = collections.defaultdict(Score)
-    for dek in decks:
-        for card, _ in dek.cards():
-            cards_score[card] += dek.score
+    for index, dek in enumerate(decks):
+        for card, _ in _utils.deck_cards(dek):
+            cards_score[card] += scores[index]
 
     cards_score_list = sorted(cards_score.items(), key=lambda a: a[1], reverse=True)
     cards_norm_score_list = sorted(
         [
-            (card, round(score.vp / A.played[card], 2))
+            (card, round(score.vp / played[card], 2))
             for card, score in cards_score.items()
         ],
         key=lambda a: a[1],
@@ -200,9 +228,9 @@ def stats(args):
     score_rank = {c: r for r, c, _score in ranking(cards_score_list)}
     cards_norm_score = dict(cards_norm_score_list)
     upheaval = {k: v - score_rank[k] for k, v in played_rank.items()}
-    average_score = sum(d.score.vp for d in decks) / len(decks)
+    average_score = sum(s.vp for s in scores.values()) / len(decks)
     cards_diff_score = {
-        card: round((score - average_score) * A.played[card], 2)
+        card: round((score - average_score) * played[card], 2)
         for card, score in cards_norm_score.items()
     }
     print()
@@ -214,17 +242,19 @@ def stats(args):
     for r, c, count in ranking(most_common):
         print(
             f"{r}. {trend(upheaval.get(c, 0))} {count:0>2} {cards_score[c]} "
-            f"({cards_norm_score[c]}) [{cards_diff_score[c]}] {c} "
+            f"({cards_norm_score[c]}) [{cards_diff_score[c]}] "
+            f"{c.unique_name} "
         )
     print()
     print()
     print("------------ Score ------------")
     for r, c, score in ranking(cards_norm_score_list):
-        if A.played[c] < 3:
+        if played[c] < 3:
             continue
         print(
-            f"{r}. {trend(upheaval.get(c, 0))} {A.played[c]:0>2} {cards_score[c]} "
-            f"({cards_norm_score[c]}) [{cards_diff_score[c]}] {c} "
+            f"{r}. {trend(upheaval.get(c, 0))} {played[c]:0>2} {cards_score[c]} "
+            f"({cards_norm_score[c]}) [{cards_diff_score[c]}] "
+            f"{c.unique_name} "
         )
     print()
     if args.folder:
@@ -241,7 +271,7 @@ def stats(args):
             if dif < 20:
                 break
             print(
-                f"{i}. {card} has {dif} ranks more ({A.played[card]}: "
+                f"{i}. {card.unique_name} has {dif} ranks more ({played[card]}: "
                 f"{cards_norm_score[card]}) [{cards_diff_score[card]}]"
             )
 
@@ -250,7 +280,7 @@ def stats(args):
             if dif > -60:
                 break
             print(
-                f"{i}. {card} has {-dif} ranks less ({A.played[card]}: "
+                f"{i}. {card.unique_name} has {-dif} ranks less ({played[card]}: "
                 f"{cards_norm_score[card]}) [{cards_diff_score[card]}]"
             )
         print()
@@ -266,8 +296,8 @@ def stats(args):
             if dif < 6:
                 break
             print(
-                f"{i}. {card} got {dif} more VPs than average ({A.played[card]}: "
-                f"{cards_norm_score[card]})"
+                f"{i}. {card.unique_name} got {dif} more VPs than average "
+                f"({played[card]}: {cards_norm_score[card]})"
             )
 
         print("------------ Underperforming ------------")
@@ -275,8 +305,8 @@ def stats(args):
             if dif > -5:
                 break
             print(
-                f"{i}. {card} has {-dif} less VPs than average ({A.played[card]}: "
-                f"{cards_norm_score[card]})"
+                f"{i}. {card.unique_name} has {-dif} less VPs than average "
+                f"({played[card]}: {cards_norm_score[card]})"
             )
 
     print()
@@ -293,8 +323,8 @@ def stats(args):
             if count < 2:
                 break
             print(
-                f"{rank}. {card} – played in {count} decks, "
-                f"{_utils.typical_copies(A, card)} – {cards_score[card]} "
+                f"{rank}. {card.unique_name} – played in {count} decks, "
+                f"{_utils.typical_copies(card_stats, card)} – {cards_score[card]} "
                 f"({cards_norm_score[card]}) [{cards_diff_score[card]}] "
                 f"{trend(upheaval.get(card, 0))}"
             )
@@ -307,8 +337,7 @@ def stats(args):
     proportions = sorted(
         [
             (
-                len([d for d in decks if len(list(d.cards(condition))) > 5])
-                / len(decks),
+                len([d for d in decks if _matching(d, condition) > 5]) / len(decks),
                 name,
             )
             for name, condition in DISCIPLINES.items()
@@ -318,14 +347,13 @@ def stats(args):
     for p, name in proportions:
         if p < 0.005:
             break
-        print(f"- {round(p*100)}% {name}")
+        print(f"- {round(p * 100)}% {name}")
     print()
     print("------------ Clans ------------")
     proportions = sorted(
         [
             (
-                len([d for d in decks if len(list(d.cards(condition))) > 5])
-                / len(decks),
+                len([d for d in decks if _matching(d, condition) > 5]) / len(decks),
                 name,
             )
             for name, condition in CLANS.items()
@@ -335,5 +363,5 @@ def stats(args):
     for p, name in proportions:
         if p < 0.005:
             break
-        print(f"- {round(p*100)}% {name}")
+        print(f"- {round(p * 100)}% {name}")
     print()

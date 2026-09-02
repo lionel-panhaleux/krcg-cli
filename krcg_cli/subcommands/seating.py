@@ -1,5 +1,7 @@
 import argparse
 import collections
+import contextlib
+import pathlib
 import multiprocessing
 import multiprocessing.shared_memory
 import sys
@@ -76,9 +78,8 @@ yield unusable seatings listing only the players of the last round.
     parser.add_argument(
         "-o",
         "--output",
-        type=argparse.FileType("a"),
-        default=sys.stdout,
-        help="File to append the result to",
+        type=pathlib.Path,
+        help="File to append the result to (default: standard output)",
     )
     parser.add_argument(
         "-v",
@@ -139,6 +140,15 @@ class Progression:
 
 
 def seat(options):
+    with contextlib.ExitStack() as stack:
+        if options.output:
+            options.output = stack.enter_context(options.output.open("a"))
+        else:
+            options.output = sys.stdout
+        return _seat(options)
+
+
+def _seat(options):
     if options.players and options.played:
         print(
             "the [played] and [players] arguments cannot be used both", file=sys.stderr
