@@ -218,7 +218,12 @@ def add_card_filters(parser: argparse.ArgumentParser) -> None:
     add("--title", dimension="title", help="Filter by title")
     add("--city", dimension="city", help="Filter by city", listed=False)
     add("--rarity", dimension="rarity", help="Filter by rarity")
-    add("--precon", dimension="precon", help="Filter by preconstructed starter")
+    add(
+        "--precon",
+        dimension="precon",
+        help="Filter by preconstructed starter (SET:BUNDLE)",
+        listed=False,
+    )
     add("--artist", dimension="artist", help="Filter by artist", listed=False)
     parser.add_argument(
         "--no-reprint",
