@@ -64,48 +64,22 @@ def _display_card(args, name: str, index: int = 0) -> None:
             print(f"  {lang[:2]} -- {translation}")
     if args.short:
         return
-    print(_card_text(args, card))
+    print(_utils.card_text(card, args.krcg))
     if args.international:
         for lang, translation in card.i18n_variants("card_text"):
             print(f"\n-- {lang[:2]}\n{translation}")
-    if args.text or not card.rulings.get("text"):
+    if args.text or not card.rulings:
         return
     print(_card_rulings(args, card))
-
-
-def _card_text(args, card) -> str:
-    """Full text of a card (id, title, traits, costs, ...) for display purposes"""
-    text = "[{}]".format("/".join(card.types))
-    if card.clans:
-        text += "[{}]".format("/".join(card.clans))
-    if card.pool_cost:
-        text += "[{}P]".format(card.pool_cost)
-    if card.blood_cost:
-        text += "[{}B]".format(card.blood_cost)
-    if card.conviction_cost:
-        text += "[{}C]".format(card.conviction_cost)
-    if card.capacity:
-        text += "[{}]".format(card.capacity)
-    if not args.krcg and card.group:
-        text += "(g.{})".format(card.group)
-    if card.burn_option:
-        text += "(Burn Option)"
-    if card.banned:
-        text += " -- BANNED in " + card["Banned"]
-    if not args.krcg:
-        text += " -- (#{})".format(card.id)
-    if card.crypt and card.disciplines:
-        text += "\n{}".format(" ".join(card.disciplines) or "-- No discipline")
-    text += "\n{}".format(card.card_text)
-    return text
 
 
 def _card_rulings(args, card):
     """Text of a card's rulings"""
     text = "\n-- Rulings\n"
-    for ruling in card.rulings["text"]:
-        text += ruling + "\n"
-    if args.links:
-        for ref, link in card.rulings["links"].items():
-            text += f"{ref}: {link}\n"
+    for ruling in card.rulings:
+        text += ruling["text"] + "\n"
+        if args.links:
+            for ref in ruling["references"]:
+                text += f"{ref['label']}: {ref['url']}\n"
+            text += "\n"
     return text[:-1]

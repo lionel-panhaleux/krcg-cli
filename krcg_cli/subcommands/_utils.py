@@ -2,7 +2,6 @@ import aiohttp
 import argparse
 import asyncio
 import arrow
-import html.parser
 import itertools
 import json
 import logging
@@ -12,6 +11,7 @@ import sys
 import caseconverter
 import unidecode
 
+import krcg.cards
 from krcg import deck
 from krcg import twda
 from krcg import vtes
@@ -31,44 +31,42 @@ def _init(with_twda=False):
         raise
 
 
-class CGCParser(html.parser.HTMLParser):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.price = None
-        self.in_price = False
+# The CGC shop is a WooCommerce site exposing a public WPGraphQL endpoint.
+# Products are looked up by slug; a variable product has one variation per
+# printing, with its own price and stock status.
+CGC_GRAPHQL_URL = "https://shop.cardgamegeek.com/wp/graphql"
+CGC_QUERY = """
+fragment P on Product {
+  ... on SimpleProduct { price salePrice stockStatus }
+  ... on VariableProduct {
+    price
+    salePrice
+    variations(first: 100) { nodes { price salePrice stockStatus } }
+  }
+}
+query {%s}
+"""
 
-    def handle_starttag(self, tag, attrs):
-        if self.in_price:
-            return
-        if tag != "script":
-            return
-        id_ = dict(attrs).get("id")
-        if id_ == "__NEXT_DATA__":
-            self.in_price = True
 
-    def handle_endtag(self, tag):
-        if not self.in_price:
-            return
-        if tag != "script":
-            return
-        self.in_price = False
+def cgc_product_price(product: dict | None) -> float | None:
+    """Price of a CGC product: sale price if any, else regular price.
 
-    def handle_data(self, data):
-        if not self.in_price:
-            return
-        try:
-            data = json.loads(data)
-            main_price = data["props"]["pageProps"]["product"]["price"]
-            if main_price:
-                self.price = main_price
-                return
-            for node in data["props"]["pageProps"]["product"]["variations"]["nodes"]:
-                if not self.price:
-                    self.price = node["price"]
-                else:
-                    self.price = min(self.price, node["price"])
-        except KeyError:
-            logging.getLogger().exception("failed to parse: %s", data)
+    Simple products carry their price directly. Variable products (one variation
+    per printing) do not: use the cheapest variation, preferring those in stock.
+    """
+    if not product:
+        return None
+    offers = [product] + ((product.get("variations") or {}).get("nodes") or [])
+    prices = {}  # price -> in stock
+    for offer in offers:
+        price = offer.get("salePrice") or offer.get("price")
+        if price:
+            in_stock = offer.get("stockStatus") == "IN_STOCK"
+            prices[price] = prices.get(price, False) or in_stock
+    if not prices:
+        return None
+    in_stock = [price for price, available in prices.items() if available]
+    return min(in_stock or prices)
 
 
 NAMES_MAP = {
@@ -88,7 +86,6 @@ NAMES_MAP = {
     "Shadow Court Satyr": "shadow-court-satyr-changeling",
     "Thadius Zho": "thadius-zho-mage",
     "Amam the Devourer": "amam-the-devourer-bane-mummy",
-    "Sacré-Cœur Cathedral, France": "sacre-cour-cathedral-france",
     "Akhenaten, The Sun Pharaoh": "akhenaten-the-sun-pharaoh-mummy",
     "Brigitte Gebauer": "brigitte-gebauer-wraith",
     "Masquer": "masquer-wraith",
@@ -105,6 +102,40 @@ NAMES_MAP = {
     "The Crimson Sentinel": "crimson-sentinel",
     "47th Street Royals": "47th-street-royal",
     "Kpist m/45": "kpist-m-45",
+    "Antoinette DuChamp": "antoinette-duchamp",
+    "Andre LeRoux": "andre-leroux",
+    "Paul DiCarlo, The Alpha": "paul-dicarlo-the-alpha",
+    "Tyler McGill": "tyler-mcgill",
+    'Felix "Fix" Hessian': "felix-fix-hessian-wraith",
+    "KoKo": "koko",
+    "Ramiel DuPre": "ramiel-dupre",
+    "T.J.": "t-j",
+    'Xian "DziDzat155" Quan': "xian-dzidzat155-quan",
+    "Navar McClaren": "navar-mcclaren",
+    "Gilbert Duane (G6)": "gilbert-duane-2",
+    "Kalinda (G6)": "kalinda-2",
+    "Ruth McGinley": "ruth-mcginley",
+    "Theo Bell (G6)": "theo-bell-2",
+    "Michael diCarlo": "michael-dicarlo",
+    "Sébastien Goulet": "sebastian-goulet",
+    "Sébastien Goulet (ADV)": "sebastian-goulet-adv",
+    "Evan Klein (G6)": "evan-klein-2",
+    "The Dracon": "the-dracon-humble-bundle",
+    "Tutu the Doubly Evil One": "tutu-the-doubly-evil-one-bane-mummy",
+    "Maila": "maila-promo",
+    "Hesha Ruhadze (G6)": "hesha-ruhadze-2",
+    "Anarch Manifesto, An": "an-anarch-manifesto",
+    "Redbone McCray": "redbone-mccray",
+    "Abraham DuSable": "abraham-dusable",
+    "Qetu the Evil Doer": "qetu-the-evil-doer-bane-mummy",
+    "Meditative Grove": "mediative-grove",
+    "Doris McMillon": "doris-mcmillon",
+    "MacAlister Marshall": "macalister-marshall",
+    'Anna "Dictatrix11" Suljic': "anna-dictatrixll-suljic",
+    "Chester DuBois": "chester-dubois",
+    "DeSalle": "desalle",
+    "C.J.": "c-j",
+    "Gerald FitzGerald": "gerald-fitzgerald",
 }
 
 
@@ -116,32 +147,43 @@ def batched(iterable, n):
         yield batch
 
 
-async def get_cards_price_CGC(card_names, result):
+def cgc_slug(card_name: str) -> str:
+    return NAMES_MAP.get(
+        card_name, caseconverter.kebabcase(unidecode.unidecode(card_name))
+    )
+
+
+async def get_cards_price_CGC(
+    session: aiohttp.ClientSession, card_names: list[str]
+) -> list[float | None]:
+    """Fetch the prices of a batch of cards in a single GraphQL query."""
+    query = CGC_QUERY % "".join(
+        f"p{i}: product(id: {json.dumps(cgc_slug(name))}, idType: SLUG) {{ ...P }}"
+        for i, name in enumerate(card_names)
+    )
+    async with session.post(
+        CGC_GRAPHQL_URL, json={"query": query}, timeout=60
+    ) as response:
+        response.raise_for_status()
+        result = await response.json()
+    for error in result.get("errors") or []:
+        # per-product errors (unknown slug) have a path, query errors do not
+        level = logging.DEBUG if "path" in error else logging.WARNING
+        logging.getLogger().log(level, "CGC price lookup: %s", error.get("message"))
+    data = result.get("data") or {}
+    return [cgc_product_price(data.get(f"p{i}")) for i in range(len(card_names))]
+
+
+async def get_all_cards_price_CGC(card_names: list[str]) -> list[float | None]:
+    prices = []
     async with aiohttp.ClientSession() as session:
         for batch in batched(card_names, n=50):
-            result.extend(
-                await asyncio.gather(
-                    *(
-                        get_card_price_CGC(
-                            session,
-                            "https://shop.cardgamegeek.com/shop/product/"
-                            + NAMES_MAP.get(
-                                name, caseconverter.kebabcase(unidecode.unidecode(name))
-                            ),
-                        )
-                        for name in batch
-                    ),
-                    return_exceptions=True,
-                )
-            )
-
-
-async def get_card_price_CGC(session: aiohttp.ClientSession, url):
-    async with session.get(url, timeout=30) as response:
-        parser = CGCParser()
-        index = await response.text()
-        parser.feed(index)
-        return parser.price
+            try:
+                prices.extend(await get_cards_price_CGC(session, batch))
+            except (aiohttp.ClientError, TimeoutError, ValueError) as e:
+                logging.getLogger().warning("CGC price lookup failed: %r", e)
+                prices.extend([None] * len(batch))
+    return prices
 
 
 def add_price_option(parser):
@@ -153,9 +195,8 @@ def add_price_option(parser):
 
 
 def get_cards_prices(cards):
-    prices = []
-    asyncio.run(get_cards_price_CGC([c.usual_name for c in cards], prices))
-    return {c.id: p for c, p in zip(cards, prices) if not isinstance(p, Exception)}
+    prices = asyncio.run(get_all_cards_price_CGC([c.usual_name for c in cards]))
+    return {c.id: p for c, p in zip(cards, prices) if p}
 
 
 class NargsChoice(argparse.Action):
@@ -517,3 +558,30 @@ def typical_copies(A, card, naked=False):
     else:
         ret += " copy"
     return ret
+
+
+def card_text(card: krcg.cards.Card, krcg_format: bool) -> str:
+    """Full text of a card (id, title, traits, costs, ...) for display purposes"""
+    text = "[{}]".format("/".join(card.types))
+    if card.clans:
+        text += "[{}]".format("/".join(card.clans))
+    if card.pool_cost:
+        text += "[{}P]".format(card.pool_cost)
+    if card.blood_cost:
+        text += "[{}B]".format(card.blood_cost)
+    if card.conviction_cost:
+        text += "[{}C]".format(card.conviction_cost)
+    if card.capacity:
+        text += "[{}]".format(card.capacity)
+    if not krcg_format and card.group:
+        text += "(g.{})".format(card.group)
+    if card.burn_option:
+        text += "(Burn Option)"
+    if card.banned:
+        text += " -- BANNED in " + card["Banned"]
+    if not krcg_format:
+        text += " -- (#{})".format(card.id)
+    if card.crypt and card.disciplines:
+        text += "\n{}".format(" ".join(card.disciplines) or "-- No discipline")
+    text += "\n{}".format(card.card_text)
+    return text

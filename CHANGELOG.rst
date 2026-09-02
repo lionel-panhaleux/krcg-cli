@@ -1,7 +1,8 @@
 2.9 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Fix the `--price` option of the `top` command (CGC shop GraphQL API)
+- Add `--output full` to the `top` command (cards text)
 
 
 2.8 (2024-02-08)

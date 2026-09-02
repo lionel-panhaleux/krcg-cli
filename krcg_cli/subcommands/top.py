@@ -20,7 +20,7 @@ def add_parser(parser):
         "--output",
         type=str,
         default="human",
-        choices=["human", "csv"],
+        choices=["human", "full", "csv"],
         help="Output format (default human)",
     )
     _utils.add_card_filters(parser)
@@ -43,7 +43,9 @@ def top(args):
     if args.price:
         prices = _utils.get_cards_prices([c for c, _n in cards])
     for card, count in cards:
-        if args.output == "human":
+        if args.output == "full":
+            print("---------------------------------------------------------")
+        if args.output in ["full", "human"]:
             s = (
                 f"{card.usual_name:<30} (played in {count} decks, typically "
                 f"{_utils.typical_copies(A, card)})"
@@ -62,4 +64,7 @@ def top(args):
             else:
                 s = "  N/A  " + s
         print(s)
+        if args.output == "full":
+            print(_utils.card_text(card, False))
+            print()
     return 0
