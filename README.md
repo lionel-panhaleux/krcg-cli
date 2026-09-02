@@ -165,6 +165,25 @@ $ krcg card --price Alastor
 ...
 ```
 
+`card` reads names on its standard input, so it chains with `search`.
+Here is the list of cards not yet reprinted, most expensive first
+(`-n 0` lifts the search limit, `sort` skips the euro sign; it takes a couple of minutes):
+
+```bash
+$ krcg search --no-reprint -n 0 | krcg card --price -s | sort -k1.2 -rn
+€80.00 Fortschritt Library
+€70.00 Veles' Hunt
+€55.00 Sunset Strip, Hollywood
+€50.00 Waiting Game
+€50.00 Barrenness
+€47.00 Tupdog
+€45.00 Powerbase: Tshwane
+€45.00 Ossian
+€45.00 Gift of Bellona
+€40.00 Therbold Realty
+...
+```
+
 Search for cards matching a number of criteria
 
 ```bash
