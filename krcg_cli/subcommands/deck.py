@@ -1,3 +1,5 @@
+"""Show TWDA decks."""
+
 import datetime
 import sys
 
@@ -8,6 +10,7 @@ from . import _utils
 
 
 def add_parser(parser):
+    """Add the deck subparser."""
     parser = parser.add_parser("deck", help="show TWDA decks")
     _utils.add_twda_filters(parser)
     parser.add_argument(
@@ -23,6 +26,7 @@ def add_parser(parser):
 
 
 def deck(args):
+    """List or display TWDA decks by id, card or player."""
     cards_db = _utils.get_cards()
     archive = _utils.get_twda()
     known_authors = {

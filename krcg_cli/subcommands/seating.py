@@ -1,3 +1,5 @@
+"""Compute an optimal tournament seating."""
+
 import argparse
 import collections
 import contextlib
@@ -10,6 +12,7 @@ from krcg import seating
 
 
 def add_parser(parser):
+    """Add the seating subparser."""
     parser = parser.add_parser(
         "seating",
         help="compute optimal seating",
@@ -132,14 +135,19 @@ GROUPS = {
 
 
 class Progression:
+    """Progress display on stderr, as an `optimise` callback."""
+
     def __init__(self, iterations: int):
+        """Store the total number of iterations."""
         self.iterations = iterations
 
     def callback(self, step, **kwargs):
+        """Print the progression percentage."""
         print(f"\t{step / self.iterations * 100:.0f}%", file=sys.stderr, end="\r")
 
 
 def seat(options):
+    """Compute the seating, writing to the output file if any."""
     with contextlib.ExitStack() as stack:
         if options.output:
             options.output = stack.enter_context(options.output.open("a"))
@@ -249,6 +257,7 @@ def _seat(options):
 
 
 def format_anomalies(score, code):
+    """Human-readable violations of a seating rule."""
     anomalies = getattr(score, code)
     if code in ["R1", "R2", "R4"]:
         return ", ".join(f"{a}-{b}" for a, b in anomalies)
@@ -270,6 +279,7 @@ def format_anomalies(score, code):
 
 
 def partition(anomalies, mean):
+    """Group players by value, for the deviation rules R3 and R8."""
     partitions = collections.defaultdict(list)
     for player, value in anomalies:
         partitions[value].append(player)

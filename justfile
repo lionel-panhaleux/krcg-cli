@@ -59,7 +59,7 @@ bump level="minor": check
     uv version --bump "{{ level }}"
     VERSION="$(uv version --short)"
     echo "📝 Committing version ${VERSION}..."
-    git add pyproject.toml uv.lock
+    git add pyproject.toml
     git commit -m "Release ${VERSION}" && git tag "v${VERSION}"
     echo "📤 Pushing to remote..."
     git push origin master --tags

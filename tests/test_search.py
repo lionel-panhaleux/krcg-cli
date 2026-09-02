@@ -1,8 +1,11 @@
+"""Test the search subcommand."""
+
 import pytest
 
 
 @pytest.mark.baseline
 def test(cli, snapshot):
+    """Snapshot the search output."""
     for name, args in {
         "search-text-pentex": ["--text", "Pentex"],
         "search-city-chicago": ["--city", "chicago"],
@@ -21,6 +24,7 @@ def test(cli, snapshot):
 
 def test_filters(cli):
     # sets are accepted by name or code, case-insensitive
+    """Check the filters semantics."""
     by_name = cli("search", "--set", "black hand", "-n", "0")
     assert by_name[0] == 0
     assert by_name == cli("search", "--set", "BH", "-n", "0")

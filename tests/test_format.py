@@ -1,3 +1,5 @@
+"""Test the format subcommand."""
+
 DECKLIST = """Crypt (12 cards, min=7, max=24, avg=3.75)
 -----------------------------------------
 1x Gilbert Duane          7 AUS DOM OBF      prince  Malkavian:1
@@ -60,6 +62,7 @@ Event (4)
 
 
 def test(cli, snapshot, tmp_path):
+    """Snapshot the format output."""
     path = tmp_path / "test-format.txt"
     path.write_text(DECKLIST)
     for format_ in ("twd", "lackey", "jol", "json"):

@@ -1,3 +1,5 @@
+"""Show cards: text, rulings, translations and price."""
+
 import sys
 
 from krcg import models
@@ -6,6 +8,7 @@ from . import _utils
 
 
 def add_parser(parser):
+    """Add the card subparser."""
     parser = parser.add_parser("card", help="show cards")
     parser.add_argument(
         "-i", "--international", action="store_true", help="display translations"
@@ -20,41 +23,41 @@ def add_parser(parser):
         "-l", "--links", action="store_true", help="display ruling links"
     )
     parser.add_argument("-k", "--krcg", action="store_true", help="display KRCG format")
+    _utils.add_price_option(parser)
     parser.add_argument("cards", metavar="CARD", nargs="*", help="card names or IDs")
     parser.set_defaults(func=card)
 
 
 def card(args):
-    """Display cards, their text and rulings"""
-    index = 0
-    cards = args.cards
-    if not cards and not sys.stdin.isatty():
-        cards = sys.stdin.read().splitlines()
-    try:
-        for name in cards:
-            _display_card(args, name, index)
-            index += 1
-        return 0
-    except KeyError:
-        if index == 0:
-            try:
-                _display_card(args, " ".join(cards))
-                return 0
-            except KeyError:
-                pass
-    sys.stderr.write("Card not found\n")
-    return 1
+    """Display cards, their text, price and rulings."""
+    cards_db = _utils.get_cards()
+    names = args.cards
+    if not names and not sys.stdin.isatty():
+        names = sys.stdin.read().splitlines()
+    # a name given as separate words: "krcg card Govern the Unaligned"
+    if len(names) > 1 and " ".join(names) in cards_db:
+        names = [" ".join(names)]
+    cards = []
+    for name in names:
+        key: int | str = int(name) if name.isdigit() else name
+        try:
+            cards.append(cards_db[key])
+        except KeyError:
+            sys.stderr.write(f"Card not found: {name}\n")
+            return 1
+    prices = _utils.get_cards_prices(cards) if args.price else {}
+    for index, card in enumerate(cards):
+        if index > 0 and not args.short:
+            print()
+        _display_card(args, card, prices.get(card.id))
+    return 0
 
 
-def _display_card(args, name: str, index: int = 0) -> None:
-    if not args.short and index > 0:
-        print()
-    key: int | str = int(name) if name.isdigit() else name
-    card = _utils.get_cards()[key]
-    if args.krcg:
-        print(str(card))
-    else:
-        print(card.unique_name)
+def _display_card(args, card: models.Card, price: float | None) -> None:
+    name = str(card) if args.krcg else card.unique_name
+    if args.price:
+        name = (f"€{price:>5.2f} " if price else "  N/A  ") + name
+    print(name)
     translations = sorted(card.i18n.items())
     if args.international:
         for lang, translation in translations:
@@ -71,12 +74,16 @@ def _display_card(args, name: str, index: int = 0) -> None:
 
 
 def _card_rulings(args, card: models.Card) -> str:
-    """Text of a card's rulings"""
     text = "\n-- Rulings\n"
     for ruling in card.rulings:
         text += ruling.text + "\n"
-        if args.links:
-            for reference in ruling.references:
-                text += f"{reference.label}: {reference.url}\n"
-            text += "\n"
+    if args.links:
+        references = {
+            reference.label: reference.url
+            for ruling in card.rulings
+            for reference in ruling.references
+        }
+        text += "\n-- Rulings references\n"
+        for label, url in references.items():
+            text += f"{label}: {url}\n"
     return text[:-1]

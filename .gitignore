@@ -4,6 +4,7 @@ build/
 dist/
 .venv/
 *.egg-info/
+uv.lock
 
 # test
 .pytest_cache/

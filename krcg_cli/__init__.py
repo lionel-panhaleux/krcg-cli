@@ -1,3 +1,5 @@
+"""KRCG command line interface for VTES."""
+
 import logging
 import sys
 
@@ -5,6 +7,7 @@ from . import parser
 
 
 def main():
+    """Entry point of the `krcg` command."""
     logging.basicConfig(level=logging.INFO, format="[%(levelname)7s] %(message)s")
     sys.exit(parser.execute(sys.argv[1:]))
 

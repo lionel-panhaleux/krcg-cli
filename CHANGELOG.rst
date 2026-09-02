@@ -5,6 +5,8 @@
   the CLI works offline, only the `--price` option needs an Internet connection.
 - Fix the `--price` option of the `top` command (CGC shop GraphQL API)
 - Add `--output full` to the `top` command (cards text)
+- Add the `--price` option to the `card` command
+- `card --links` lists the rulings references once, after the rulings
 - Set filters (`--set`, `--exclude-set`) accept set names or codes
 - Group filter (`--group`) accepts bare numbers
 - `format --format json` outputs the krcg deck JSON

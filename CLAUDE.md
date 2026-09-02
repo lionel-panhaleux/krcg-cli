@@ -20,7 +20,7 @@ This project uses [`uv`](https://github.com/astral-sh/uv) for dependencies and [
 
 Run a single test: `uv run pytest tests/test_search.py::test_filters -vvs`
 
-Lint config lives in `pyproject.toml`: ruff selects `E,F,W,UP`, type-checking is `ty check krcg_cli`. Keep `just quality` green.
+Lint config lives in `pyproject.toml`: ruff selects `E,D,F,W,UP` with the Google docstring convention (every module, class and function gets a one-line docstring — ruff enforces it), type-checking is `ty check krcg_cli`. Keep `just quality` green.
 
 ## Code style
 
@@ -28,7 +28,7 @@ Follow the krcg conventions: compact, functional code, no OO ceremony.
 
 - Keep changes minimal and the code tight; prefer free functions and plain data to classes.
 - Don't split out a function used in only one place. Reserve helpers for genuine reuse — `_utils.py` is exactly that.
-- Comments are exceptional: write one only for context the code cannot express (an external constraint, a data quirk, a surprising reason). Short docstrings on the shared helpers, none required on the subcommands.
+- Comments are exceptional: write one only for context the code cannot express (an external constraint, a data quirk, a surprising reason). Docstrings are one line unless the helper genuinely needs more.
 - Import whole modules at the top of the file and reference qualified (`from krcg import providers`, then `providers.serialize_twd`). Never import inside a function.
 - The CLI's output is `print`; diagnostics go through `logging` (the `krcg` logger, `main()` configures it). Messages to the user on failure go to `sys.stderr`, and the subcommand returns a non-zero exit code.
 - Modern typing: builtin generics and `X | None`. Annotate the shared helpers; subcommand functions can stay light.

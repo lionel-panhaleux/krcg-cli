@@ -1,3 +1,5 @@
+"""Display cards affinity (most played together)."""
+
 import sys
 
 from krcg import analyzer
@@ -6,6 +8,7 @@ from . import _utils
 
 
 def add_parser(parser):
+    """Add the affinity subparser."""
     parser = parser.add_parser(
         "affinity", help="display cards affinity (most played together)"
     )
@@ -21,6 +24,7 @@ def add_parser(parser):
 
 
 def affinity(args):
+    """Display the cards most played together with the given cards."""
     decks = _utils.filter_twda(args)
     cards_db = _utils.get_cards()
     try:

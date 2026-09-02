@@ -1,3 +1,5 @@
+"""Display the most played cards."""
+
 import sys
 
 from krcg import analyzer
@@ -6,6 +8,7 @@ from . import _utils
 
 
 def add_parser(parser):
+    """Add the top subparser."""
     parser = parser.add_parser("top", help="display top cards (most played)")
     parser.add_argument(
         "-n",
@@ -29,6 +32,7 @@ def add_parser(parser):
 
 
 def top(args):
+    """List the most played cards matching the filters."""
     candidates = _utils.filter_cards(args)
     if not candidates:
         sys.stderr.write("No card match\n")

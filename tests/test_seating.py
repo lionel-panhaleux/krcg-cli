@@ -1,9 +1,11 @@
+"""Test the seating subcommand."""
+
 import tempfile
 from krcg_cli.parser import execute as cli_execute
 
 
 def local_execute(line: str):
-    """For whatever reason, capsys is really struggling to get it right here"""
+    """Run the seating command with an output file (capsys struggles here)."""
     args = line.split()
     tmp = tempfile.NamedTemporaryFile("r")
     args.insert(1, "-o")
@@ -18,6 +20,7 @@ def test_base():
     #
     # Base usage, defaults to 3 rounds
     #
+    """Snapshot a card display."""
     result = local_execute("seating -i 1 12")
     assert result
     assert set(int(i) for i in result.split()[0].split(",")) == set(range(1, 13))
@@ -48,6 +51,7 @@ def test_add_remove(capsys):
     #
     # Adding and removing players after first round have been played
     #
+    """Check adding and removing players between rounds."""
     result = local_execute(
         "seating -i 1 -p 1,2,3,4,5,6,7,8,9,10,11,12 --add 13 14 --remove 5"
     )
@@ -105,6 +109,7 @@ def test_add_remove(capsys):
 
 
 def test_simple_scoring():
+    """Check the scoring of a given seating."""
     result = local_execute(
         "seating -vi 0 -p 1,2,3,4,5,6,7,8,9 2,5,7,1,8,9,4,6,3 4,1,9,7,2,8,3,5,6"
     )

@@ -1,7 +1,10 @@
+"""Test the card subcommand."""
+
 import pytest
 
 
 def test_base(cli, snapshot):
+    """Snapshot a card display."""
     code, out, err = cli("card", "krcg")
     assert code == 0
     assert err == ""
@@ -10,6 +13,7 @@ def test_base(cli, snapshot):
 
 @pytest.mark.baseline
 def test_international(cli, snapshot):
+    """Snapshot the translations display."""
     code, out, err = cli("card", "--international", ".44 Magnum")
     assert code == 0
     assert err == ""
@@ -17,12 +21,14 @@ def test_international(cli, snapshot):
 
 
 def test_short(cli):
+    """Check the short and krcg formats."""
     assert cli("card", "--short", "alastor") == (0, "Alastor\n", "")
     assert cli("card", "-s", "100001") == (0, ".44 Magnum\n", "")
     assert cli("card", "-k", "-s", "100001") == (0, "100001|.44 Magnum\n", "")
 
 
 def test_text(cli, snapshot):
+    """Snapshot the text-only display."""
     code, out, err = cli("card", "--text", "alastor")
     assert code == 0
     assert err == ""
@@ -35,6 +41,7 @@ def test_text(cli, snapshot):
 
 @pytest.mark.baseline
 def test_links(cli, snapshot):
+    """Snapshot the rulings links display."""
     code, out, err = cli("card", "--links", "alastor")
     assert code == 0
     assert err == ""
@@ -42,4 +49,10 @@ def test_links(cli, snapshot):
 
 
 def test_not_found(cli):
-    assert cli("card", "foobar") == (1, "", "Card not found\n")
+    """Check the error on an unknown argument."""
+    assert cli("card", "foobar") == (1, "", "Card not found: foobar\n")
+    assert cli("card", "-s", "Govern", "the", "Unaligned") == (
+        0,
+        "Govern the Unaligned\n",
+        "",
+    )

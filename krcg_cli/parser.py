@@ -1,3 +1,5 @@
+"""The argparse tree: one subparser per subcommand module."""
+
 import argparse
 
 from .subcommands import affinity
@@ -29,6 +31,7 @@ twd.add_parser(subparsers)
 
 
 def execute(args):
+    """Parse the arguments and run the subcommand, returning its exit code."""
     args = parser.parse_args(args)
     if not args.subcommand:
         parser.print_help()

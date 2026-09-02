@@ -1,9 +1,12 @@
+"""Search cards."""
+
 import sys
 
 from . import _utils
 
 
 def add_parser(parser):
+    """Add the search subparser."""
     parser = parser.add_parser("search", help="search card")
     parser.add_argument(
         "-n",
@@ -17,6 +20,7 @@ def add_parser(parser):
 
 
 def search(args):
+    """List the cards matching the filters."""
     results = _utils.filter_cards(args)
     if not results:
         sys.stderr.write("No match\n")

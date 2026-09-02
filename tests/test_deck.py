@@ -1,8 +1,11 @@
+"""Test the deck subcommand."""
+
 import pytest
 
 
 @pytest.mark.baseline
 def test(cli, snapshot):
+    """Snapshot the deck output."""
     code, out, err = cli("deck", "2010tcdbng")
     assert code == 0
     assert err == ""
@@ -27,6 +30,7 @@ def test(cli, snapshot):
 
 
 def test_not_found(cli):
+    """Check the error on an unknown argument."""
     assert cli("deck", "foobar") == (
         1,
         "",

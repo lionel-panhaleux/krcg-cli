@@ -1,3 +1,5 @@
+"""Display TWD statistics: clans and disciplines by year."""
+
 import collections
 import itertools
 
@@ -7,6 +9,7 @@ from . import _utils
 
 
 def add_parser(parser):
+    """Add the twd subparser."""
     parser = parser.add_parser("twd", help="display TWD statistics")
     _utils.add_twda_filters(parser)
     parser.set_defaults(func=twd)
@@ -16,6 +19,7 @@ ANARCH_CONVERT = 200076
 
 
 def twd(args):
+    """Print the clans and disciplines proportions by year."""
     decks = _utils.filter_twda(args)
     decks_by_year = collections.defaultdict(set)
     decks_clans = collections.defaultdict(set)

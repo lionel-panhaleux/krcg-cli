@@ -1,3 +1,5 @@
+"""Compute statistics on a deck archive."""
+
 import collections
 import functools
 import pathlib
@@ -12,6 +14,7 @@ from . import _utils
 
 
 def add_parser(parser):
+    """Add the stats subparser."""
     parser = parser.add_parser("stats", help="compute stats on a deck archive")
     parser.add_argument(
         "-f",
@@ -135,23 +138,31 @@ FILTERS.update(CLANS)
 
 @functools.total_ordering
 class Score:
+    """A tournament score: game wins and victory points."""
+
     def __init__(self, **kwargs):
+        """Build a score from the gw and vp keyword arguments."""
         self.gw: int = int(kwargs.get("gw", 0))
         self.vp: float = float(kwargs.get("vp", 0))
 
     def __eq__(self, rhs):
+        """Compare scores."""
         return (self.gw, self.vp) == (rhs.gw, rhs.vp)
 
     def __lt__(self, rhs):
+        """Compare scores."""
         return (self.gw, self.vp) < (rhs.gw, rhs.vp)
 
     def __str__(self):
+        """Display as 1GW5.0."""
         return f"{self.gw}GW{self.vp}"
 
     def __add__(self, rhs):
+        """Add scores."""
         return self.__class__(gw=self.gw + rhs.gw, vp=self.vp + rhs.vp)
 
     def __iadd__(self, rhs):
+        """Add a score in place."""
         self.gw += rhs.gw
         self.vp += rhs.vp
         return self
@@ -163,6 +174,7 @@ def _matching(deck: models.Deck, condition) -> int:
 
 
 def ranking(it: Iterable):
+    """Yield (rank, card, score), ties sharing a rank."""
     rank, last_score = 0, None
     for i, (c, score) in enumerate(it, 1):
         if not last_score or score < last_score:
@@ -172,6 +184,7 @@ def ranking(it: Iterable):
 
 
 def trend(upheaval_score):
+    """Arrow marking a card ranked far from its play rate."""
     if upheaval_score > 20:
         return "↑"
     if upheaval_score < -60:
@@ -180,6 +193,7 @@ def trend(upheaval_score):
 
 
 def stats(args):
+    """Print the statistics."""
     cards_db = _utils.get_cards()
     if args.folder:
         decks = [
@@ -235,6 +249,10 @@ def stats(args):
     }
     print()
     print(f"AVERAGE METASCORE: {round(average_score, 2)}")
+    print()
+    print("  Format: <rank>. <trend> <played> <score> (<norm>) [<diff>] <card name>")
+    print("     - norm: vps / decks_having_it                  # use to compare cards")
+    print("     - diff: (vps - average_vps) * decks_having_it  # how far from average")
     print()
     print("=============== Rankings ===============")
     print()

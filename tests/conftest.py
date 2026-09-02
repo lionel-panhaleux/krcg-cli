@@ -29,7 +29,10 @@ SNAPSHOTS = pathlib.Path(__file__).parent / "snapshots"
 
 @pytest.fixture
 def cli(capsys) -> Callable[..., tuple[int, str, str]]:
+    """Run the CLI, returning (exit code, stdout, stderr)."""
+
     def run(*args: str) -> tuple[int, str, str]:
+        """Run the CLI with the given arguments."""
         code = execute(list(args))
         captured = capsys.readouterr()
         return code, captured.out, captured.err
@@ -39,7 +42,10 @@ def cli(capsys) -> Callable[..., tuple[int, str, str]]:
 
 @pytest.fixture
 def snapshot() -> Callable[[str, str], None]:
+    """Compare an output to a snapshot file, or update it."""
+
     def check(name: str, output: str) -> None:
+        """Compare the output to `tests/snapshots/<name>.txt`."""
         path = SNAPSHOTS / f"{name}.txt"
         if os.getenv("UPDATE_SNAPSHOTS"):
             path.write_text(output)
@@ -50,6 +56,7 @@ def snapshot() -> Callable[[str, str], None]:
 
 
 def pytest_configure(config: pytest.Config) -> None:
+    """Register the baseline marker."""
     config.addinivalue_line(
         "markers",
         "baseline: tracks live source data; a failure is amber (data drift), not red.",
@@ -58,6 +65,7 @@ def pytest_configure(config: pytest.Config) -> None:
 
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_makereport(item, call):
+    """Downgrade a baseline failure to an amber xfail."""
     outcome = yield
     report = outcome.get_result()
     if report.when != "call" or not report.failed:

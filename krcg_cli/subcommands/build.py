@@ -1,3 +1,5 @@
+"""Build a deck around given cards, based on the TWDA."""
+
 import sys
 
 from krcg import analyzer
@@ -7,6 +9,7 @@ from . import _utils
 
 
 def add_parser(parser):
+    """Add the build subparser."""
     parser = parser.add_parser(
         "build", help="build a deck around given card(s), based on the TWDA"
     )
@@ -16,6 +19,7 @@ def add_parser(parser):
 
 
 def build(args):
+    """Build and print a deck around the given cards."""
     decks = _utils.filter_twda(args)
     cards_db = _utils.get_cards()
     try:

@@ -1,3 +1,5 @@
+"""Format a decklist."""
+
 import contextlib
 import pathlib
 import sys
@@ -12,6 +14,7 @@ from . import _utils
 
 
 def add_parser(parser):
+    """Add the format subparser."""
     parser = parser.add_parser("format", help="format a decklist")
     parser.add_argument(
         "-f",
@@ -31,6 +34,7 @@ def add_parser(parser):
 
 
 def format(args):
+    """Parse a decklist and print it in the requested format."""
     cards_db = _utils.get_cards()
     try:
         with contextlib.ExitStack() as stack:

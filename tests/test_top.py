@@ -1,8 +1,11 @@
+"""Test the top subcommand."""
+
 import pytest
 
 
 @pytest.mark.baseline
 def test(cli, snapshot):
+    """Snapshot the top output."""
     code, out, err = cli("top", "--from", "2015", "--to", "2020", "-d", "ani")
     assert code == 0
     assert err == ""

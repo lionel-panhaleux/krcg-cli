@@ -49,7 +49,10 @@ Repository = "https://github.com/lionel-panhaleux/krcg-cli"
 packages = ["krcg_cli"]
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "UP"]
+select = ["E", "D", "F", "W", "UP"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [dependency-groups]
 dev = ["ipython", "pytest", "ruff", "ty"]
