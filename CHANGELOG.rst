@@ -1,8 +1,9 @@
-3.0 (unreleased)
+3.0 (2026-09-04)
 ----------------
 
-- Migrate to krcg 5 (Python 3.14+). Cards, rulings and the TWDA ship with krcg:
+- Migrate to krcg 5.12 (Python 3.14+). Cards, rulings and the TWDA ship with krcg:
   the CLI works offline, only the `--price` option needs an Internet connection.
+- Rulings display card names only, where krcg's card tokens may carry the card id
 - Fix the `--price` option of the `top` command (CGC shop GraphQL API)
 - Add `--output full` to the `top` command (cards text)
 - Add the `--price` option to the `card` command

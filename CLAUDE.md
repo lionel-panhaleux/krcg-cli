@@ -4,7 +4,7 @@ This file provides guidance to **all AI agents** (Claude Code and others — `AG
 
 ## What this is
 
-`krcg-cli` is the command line interface of [KRCG](https://github.com/lionel-panhaleux/krcg), the Python library for VTES (Vampire: The Eternal Struggle): card texts, rulings, the Tournament Winning Deck Archive (TWDA), deck analysis, decklist formatting and tournament seating. It is published to PyPI as `krcg-cli` and installs the `krcg` command. Python >= 3.14, krcg >= 5.11.
+`krcg-cli` is the command line interface of [KRCG](https://github.com/lionel-panhaleux/krcg), the Python library for VTES (Vampire: The Eternal Struggle): card texts, rulings, the Tournament Winning Deck Archive (TWDA), deck analysis, decklist formatting and tournament seating. It is published to PyPI as `krcg-cli` and installs the `krcg` command. Python >= 3.14, krcg >= 5.12.
 
 The library lives in the sibling repository `../krcg` when it is checked out — its `README.md` documents the public API and its `CLAUDE.md` the library conventions; consult them before guessing at the krcg API. The CLI only consumes krcg: card data, rulings and the parser belong there, not here.
 

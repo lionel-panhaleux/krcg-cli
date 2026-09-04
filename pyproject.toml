@@ -34,7 +34,7 @@ dependencies = [
     "aiohttp",
     "arrow",
     "case-converter",
-    "krcg>=5.11",
+    "krcg>=5.12",
     "msgspec",
     "unidecode",
 ]

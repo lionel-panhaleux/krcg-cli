@@ -2,7 +2,7 @@
 
 import sys
 
-from krcg import models
+from krcg import models, rulings
 
 from . import _utils
 
@@ -76,7 +76,12 @@ def _display_card(args, card: models.Card, price: float | None) -> None:
 def _card_rulings(args, card: models.Card) -> str:
     text = "\n-- Rulings\n"
     for ruling in card.rulings:
-        text += ruling.text + "\n"
+        # a token may carry the card id, `{101565|Rebirth}`: display the name only
+        names = iter(ruling.cards)
+        text += rulings.RE_CARD.sub(
+            lambda _: f"{{{next(names).unique_name}}}", ruling.text
+        )
+        text += "\n"
     if args.links:
         references = {
             reference.label: reference.url
